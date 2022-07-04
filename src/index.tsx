@@ -5,7 +5,7 @@ import { initializeIcons, mergeStyles } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
 import reportWebVitals from './reportWebVitals';
 
-// Initialize translation
+// Initialize translations
 import './i18n';
 
 // Initialize icons
