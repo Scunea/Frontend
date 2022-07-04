@@ -1,0 +1,12 @@
+.rbc-calendar>*,
+.grades-sheet>* {
+    font-family: "Segoe UI", "Segoe UI Web (West European)", "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", sans-serif;
+}
+
+.rbc-date-cell>a {
+    pointer-events: none;
+}
+
+.grades-sheet {
+    margin-bottom: 10px;
+}
