@@ -70,7 +70,7 @@ const NavF = (props: { info: User; selected: string; setSelected: (value: React.
           key: 'github',
           name: 'GitHub',
           icon: 'GitGraph',
-          url: 'https://www.example.org',
+          url: 'https://github.com/Scunea',
           target: '_blank'
         },
       ]
