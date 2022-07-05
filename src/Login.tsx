@@ -107,7 +107,7 @@ const Login = (props: { domain: string | undefined; }) => {
                         }
                     }}>{!token ? !signUp ? t('Sign in') : t('Sign up') : invites ? t('Join a school') : createSchool ? t('Create a school') : t('Choose a school')}</Text>
                 </Stack.Item>
-                {!token ? <>
+                {!token ? !signedUp ? <>
                     <Stack.Item>
                         <TextField placeholder="Email" type="email" styles={{
                             root: {
@@ -221,7 +221,12 @@ const Login = (props: { domain: string | undefined; }) => {
                                 });
                         }} />}
                     </Stack.Item>
-                </> : signedUp ? null : createSchool ? <>
+                </> : <Text styles={{
+                    root: {
+                        marginLeft: 50,
+                        marginRight: 50
+                    }
+                }}>{t('Your account has been created. Please verify your email to start using our service.')}</Text> : createSchool ? <>
 
                     <Stack.Item>
                         <TextField placeholder={t('Name')} styles={{
@@ -292,7 +297,8 @@ const Login = (props: { domain: string | undefined; }) => {
                     text: school.name
                 }} /></DefaultButton>) : <Text styles={{
                     root: {
-                        marginLeft: 50
+                        marginLeft: 50,
+                        marginRight: 50
                     }
                 }}>{t('No invites available.')}</Text> : <>
                     {schools.map(school => <DefaultButton key={school.id} styles={{
