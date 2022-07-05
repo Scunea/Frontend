@@ -1,9 +1,9 @@
 import React, { createRef, useEffect, useState } from 'react';
-import { IDropdownOption, DropdownMenuItemType, Stack, IconButton, Dropdown, TextField, DefaultButton, PrimaryButton } from '@fluentui/react';
+import { IDropdownOption, DropdownMenuItemType, Stack, IconButton, Dropdown, TextField, DefaultButton, PrimaryButton, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
 import { Editor } from 'ckeditor5-custom-build/build/ckeditor';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import { SimpleUser, User } from './interfaces';
+import { IdPlusUrl, SimpleUser, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
 const NewMessage = (props: { domain: string | undefined; newMessage: boolean; setNewMessage: (value: React.SetStateAction<boolean>) => void; info: User; }) => {
@@ -17,6 +17,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
     const [receiver, setReceiver] = useState<string[]>([]);
     const [files, setFiles] = useState<any[]>([]);
     const [pdf, setPdf] = useState<File | null>(null);
+    const [error, setError] = useState('');
 
     const { t } = useTranslation();
 
@@ -49,6 +50,13 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
 
     return (
         <Stack>
+            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                {t(error)}
+            </MessageBar> : null}
             <Stack styles={{
                 root: {
                     marginBottom: 25
@@ -203,7 +211,8 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                             uploadUrl: props.domain + '/upload',
                             headers: {
                                 'Authorization': localStorage.getItem('token') ?? "",
-                                'School': localStorage.getItem('schoolId') ?? ""
+                                'School': localStorage.getItem('schoolId') ?? "",
+                                'simple': "true"
                             }
                         }
                     }} onChange={(event: Event, editor: typeof Editor) => {
@@ -224,48 +233,51 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                             <PrimaryButton text={t('Send message')} iconProps={{ iconName: 'Send' }} onClick={() => {
                                 const thingy: File[] = (pdf ? [pdf] : []).concat(files.map(x => Array.from(x)).flat() as File[]);
                                 if (thingy.length > 0) {
-                                    let filesIds: string[] = [];
+                                    const form = new FormData();
                                     thingy.forEach((file: File, i) => {
-                                        const form = new FormData();
                                         form.append('upload', file);
-                                        fetch(props.domain + '/upload', {
-                                            method: 'POST',
-                                            body: form,
-                                            headers: new Headers({
-                                                'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? ""
-                                            })
-                                        }).then(res => res.json()).then(json => {
-                                            filesIds.push(json.id);
-                                            if (thingy.length === filesIds.length) {
-                                                fetch(props.domain + '/messages', {
-                                                    method: 'POST',
-                                                    body: JSON.stringify({
-                                                        title: title,
-                                                        content: !pdf ? content : {
-                                                            pdf: filesIds[0]
-                                                        },
-                                                        files: filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; }).filter((x, i) => !(pdf && i === 0)),
-                                                        receiver: receiver
-                                                    }),
-                                                    headers: new Headers({
-                                                        'Authorization': localStorage.getItem('token') ?? "",
-                                                        'School': localStorage.getItem('schoolId') ?? "",
-                                                        'Content-Type': 'application/json'
-                                                    })
+                                    });
+                                    fetch(props.domain + '/upload', {
+                                        method: 'POST',
+                                        body: form,
+                                        headers: new Headers({
+                                            'Authorization': localStorage.getItem('token') ?? "",
+                                            'School': localStorage.getItem('schoolId') ?? ""
+                                        })
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
+                                            const filesIds = (json as IdPlusUrl[]).map(x => x.id);
+                                            fetch(props.domain + '/messages', {
+                                                method: 'POST',
+                                                body: JSON.stringify({
+                                                    title: title,
+                                                    content: !pdf ? content : {
+                                                        pdf: filesIds[0]
+                                                    },
+                                                    files: filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; }).filter((x, i) => !(pdf && i === 0)),
+                                                    receiver: receiver
+                                                }),
+                                                headers: new Headers({
+                                                    'Authorization': localStorage.getItem('token') ?? "",
+                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'Content-Type': 'application/json'
                                                 })
-                                                    .then(res => {
-                                                        if (res.status === 201) {
-                                                            setTitle('');
-                                                            setContent('');
-                                                            setPdf(null);
-                                                            setReceiver([]);
-                                                            setFiles([]);
-                                                            props.setNewMessage(false);
-                                                        }
-                                                    });
-                                            }
-                                        });
+                                            })
+                                                .then(res => res.json()).then(json => {
+                                                    if (!json?.error) {
+                                                        setTitle('');
+                                                        setContent('');
+                                                        setPdf(null);
+                                                        setReceiver([]);
+                                                        setFiles([]);
+                                                        props.setNewMessage(false);
+                                                    } else {
+                                                        setError(json.error);
+                                                    }
+                                                });
+                                        } else {
+                                            setError(json.error);
+                                        }
                                     });
                                 } else {
                                     fetch(props.domain + '/messages', {
@@ -296,7 +308,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                             }} disabled={(!(title?.length > 0)) || ((!(content.length > 0)) && !pdf) || (!(receiver.length > 0))} />
                         </Stack.Item>
                         <Stack.Item>
-                            <input type="file" ref={inputPdf} multiple style={{
+                            <input type="file" ref={inputPdf} multiple accept="application/pdf" style={{
                                 display: 'none'
                             }} onChange={event => {
                                 if (event.target.files) {

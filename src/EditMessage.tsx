@@ -1,9 +1,9 @@
 import React, { createRef, useEffect, useState } from 'react';
-import { IDropdownOption, DropdownMenuItemType, Stack, Dropdown, TextField, DefaultButton, PrimaryButton } from '@fluentui/react';
+import { IDropdownOption, DropdownMenuItemType, Stack, Dropdown, TextField, DefaultButton, PrimaryButton, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
 import { Editor } from 'ckeditor5-custom-build/build/ckeditor';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-import { IdPlusName, Message, SimpleUser, User } from './interfaces';
+import { IdPlusName, IdPlusUrl, Message, SimpleUser, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
 const EditMessage = (props: { domain: string | undefined; oldMessage: Message; editMessage: boolean; setEditMessage: (value: React.SetStateAction<boolean>) => void; info: User; }) => {
@@ -16,6 +16,7 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
     const [receiver, setReceiver] = useState<string[]>([]);
     const [oldFiles, setOldFiles] = useState<IdPlusName[]>([]);
     const [files, setFiles] = useState<any[]>([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         setTitle(props.oldMessage?.title);
@@ -60,6 +61,13 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                     padding: 25
                 }
             }}>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                    root: {
+                        marginBottom: 25
+                    }
+                }}>
+                    {t(error)}
+                </MessageBar> : null}
                 <Stack.Item styles={{
                     root: {
                         marginBottom: 25
@@ -209,7 +217,8 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                             uploadUrl: props.domain + '/upload',
                             headers: {
                                 'Authorization': localStorage.getItem('token') ?? "",
-                                'School': localStorage.getItem('schoolId') ?? ""
+                                'School': localStorage.getItem('schoolId') ?? "",
+                                'simple': "true"
                             }
                         },
                         fontSize: {
@@ -235,45 +244,48 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                             <PrimaryButton text={t('Edit message')} iconProps={{ iconName: 'Edit' }} onClick={() => {
                                 const thingy: File[] = files.map(x => Array.from(x)).flat() as File[];
                                 if (thingy.length > 0) {
-                                    let filesIds: string[] = [];
+
+                                    const form = new FormData();
                                     thingy.forEach((file: File) => {
-                                        const form = new FormData();
                                         form.append('upload', file);
-                                        fetch(props.domain + '/upload', {
-                                            method: 'POST',
-                                            body: form,
-                                            headers: new Headers({
-                                                'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? ""
-                                            })
-                                        }).then(res => res.json()).then(json => {
-                                            filesIds.push(json.id);
-                                            if (thingy.length === filesIds.length) {
-                                                fetch(props.domain + '/messages/' + props.oldMessage?.id, {
-                                                    method: 'PATCH',
-                                                    body: JSON.stringify({
-                                                        title: title,
-                                                        content: content,
-                                                        files: oldFiles.concat(filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; })),
-                                                        receiver: receiver
-                                                    }),
-                                                    headers: new Headers({
-                                                        'Authorization': localStorage.getItem('token') ?? "",
-                                                        'School': localStorage.getItem('schoolId') ?? "",
-                                                        'Content-Type': 'application/json'
-                                                    })
+                                    });
+                                    fetch(props.domain + '/upload', {
+                                        method: 'POST',
+                                        body: form,
+                                        headers: new Headers({
+                                            'Authorization': localStorage.getItem('token') ?? "",
+                                            'School': localStorage.getItem('schoolId') ?? ""
+                                        })
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
+                                            fetch(props.domain + '/messages/' + props.oldMessage?.id, {
+                                                method: 'PATCH',
+                                                body: JSON.stringify({
+                                                    title: title,
+                                                    content: content,
+                                                    files: oldFiles.concat((json as IdPlusUrl[]).map(x => x.id).map((x, i) => { return { id: x, name: thingy[i].name }; })),
+                                                    receiver: receiver
+                                                }),
+                                                headers: new Headers({
+                                                    'Authorization': localStorage.getItem('token') ?? "",
+                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'Content-Type': 'application/json'
                                                 })
-                                                    .then(res => {
-                                                        if (res.status === 200) {
-                                                            setTitle('');
-                                                            setContent('');
-                                                            setReceiver([]);
-                                                            setFiles([]);
-                                                            props.setEditMessage(false);
-                                                        }
-                                                    });
-                                            }
-                                        });
+                                            })
+                                                .then(res => res.json()).then(json => {
+                                                    if (!json?.error) {
+                                                        setTitle('');
+                                                        setContent('');
+                                                        setReceiver([]);
+                                                        setFiles([]);
+                                                        props.setEditMessage(false);
+                                                    } else {
+                                                        setError(json.error);
+                                                    }
+                                                });
+                                        } else {
+                                            setError(json.error);
+                                        }
                                     });
                                 } else {
                                     fetch(props.domain + '/messages/' + props.oldMessage?.id, {
@@ -289,13 +301,15 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                                             'Content-Type': 'application/json'
                                         })
                                     })
-                                        .then(res => {
-                                            if (res.status === 200) {
+                                        .then(res => res.json()).then(json => {
+                                            if (!json?.error) {
                                                 setTitle('');
                                                 setContent('');
                                                 setReceiver([]);
                                                 setFiles([]);
                                                 props.setEditMessage(false);
+                                            } else {
+                                                setError(json.error);
                                             }
                                         });
                                 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { DefaultButton, IconButton, Persona, PrimaryButton, Stack, Text } from '@fluentui/react';
+import { DefaultButton, IconButton, MessageBar, MessageBarType, Persona, PrimaryButton, Stack, Text } from '@fluentui/react';
 import { DataSheetGrid, keyColumn, textColumn } from 'react-datasheet-grid';
 import { Grade, User, SimpleUser } from './interfaces';
 import 'react-datasheet-grid/dist/style.css';
@@ -8,7 +8,9 @@ import { useTranslation } from 'react-i18next';
 const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket | undefined; }) => {
 
     const [selectedUser, setSelectedUser] = useState<SimpleUser | null>(null);
+    const [originalData, setOriginalData] = useState<Grade[]>([]);
     const [data, setData] = useState<Grade[]>([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
@@ -20,7 +22,12 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     })
                 })
                     .then(res => res.json()).then(json => {
-                        setData(json);
+                        if (!json?.error) {
+                            setOriginalData(json);
+                            setData(json);
+                        } else {
+                            setError(json.error);
+                        }
                     });
             }
         }
@@ -46,7 +53,11 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     })
                 })
                     .then(res => res.json()).then(json => {
-                        setData(json);
+                        if (!json?.error) {
+                            setData(json);
+                        } else {
+                            setError(json.error);
+                        }
                     });
             }
         }
@@ -60,12 +71,15 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 padding: 25
             }
         }}>
+            <Text variant="xxLarge">{t('Something grades', { something: props.info?.teacher })}</Text>
             <Stack.Item styles={{
                 root: {
-                    marginBottom: 25
+                    marginTop: '25px !important'
                 }
             }}>
-                <Text variant="xxLarge">{t('Something grades', { something: props.info?.teacher })}</Text>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')}>
+                    {t(error)}
+                </MessageBar> : <div></div>}
             </Stack.Item>
             <DataSheetGrid
                 className="grades-sheet"
@@ -112,7 +126,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 ]}
             />
             <Stack.Item>
-                <PrimaryButton text={t('Save')} iconProps={{ iconName: 'Save' }} onClick={() => {
+                <PrimaryButton text={t('Save')} iconProps={{ iconName: 'Save' }} disabled={JSON.stringify(data) === JSON.stringify(originalData)} onClick={() => {
                     fetch(props.domain + '/grades', {
                         method: 'POST',
                         body: JSON.stringify(data),
@@ -121,6 +135,12 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                             'School': localStorage.getItem('schoolId') ?? "",
                             'Content-Type': 'application/json'
                         })
+                    }).then(res => res.json()).then(json => {
+                        if (!json?.error) {
+                            setOriginalData(data);
+                        } else {
+                            setError(json.error);
+                        }
                     });
                 }} />
             </Stack.Item>
@@ -134,12 +154,15 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     setSelectedUser(null);
                 }}></IconButton>
             </Stack.Item>
+            <Text variant="xxLarge">{t('Somebody\'s grades', { user: selectedUser.name })}</Text>
             <Stack.Item styles={{
                 root: {
-                    marginBottom: 25
+                    marginTop: '25px !important'
                 }
             }}>
-                <Text variant="xxLarge">{t('Something grades', { something: props.info?.teacher })}</Text>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')}>
+                    {t(error)}
+                </MessageBar> : <div></div>}
             </Stack.Item>
             <DataSheetGrid
                 className="grades-sheet"
@@ -195,6 +218,9 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 }
             }}>
                 <Text variant="xxLarge">{t('Choose a student')}</Text>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')}>
+                    {t(error)}
+                </MessageBar> : null}
             </Stack.Item>
             {props.info?.avaliable.filter(x => x.type === 'Student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
                 root: {
@@ -214,12 +240,15 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 padding: 25
             }
         }}>
+            <Text variant="xxLarge">{t('Your grades')}</Text>
             <Stack.Item styles={{
                 root: {
-                    marginBottom: 25
+                    marginTop: '25px !important'
                 }
             }}>
-                <Text variant="xxLarge">{t('Your grades')}</Text>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')}>
+                    {t(error)}
+                </MessageBar> : <div></div>}
             </Stack.Item>
             <DataSheetGrid
                 className="grades-sheet"
@@ -269,12 +298,15 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 padding: 25
             }
         }}>
+            <Text variant="xxLarge">{t('Your child\'s grades')}</Text>
             <Stack.Item styles={{
                 root: {
-                    marginBottom: 25
+                    marginTop: '25px !important'
                 }
             }}>
-                <Text variant="xxLarge">{t('Your child\'s grades')}</Text>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')}>
+                    {t(error)}
+                </MessageBar> : <div></div>}
             </Stack.Item>
             <DataSheetGrid
                 className="grades-sheet"

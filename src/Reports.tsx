@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, PrimaryButton, SearchBox, DatePicker, IconButton, Text, TextField, DayOfWeek, Dialog as DialogMS, DialogFooter as DialogFooterMS, DefaultButton, Modal, DialogType, IDialogFooterProps, IDialogProps } from '@fluentui/react';
+import { Stack, PrimaryButton, SearchBox, DatePicker, IconButton, Text, TextField, DayOfWeek, Dialog as DialogMS, DialogFooter as DialogFooterMS, DefaultButton, Modal, DialogType, IDialogFooterProps, IDialogProps, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
 import FuzzySet from 'fuzzyset';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -26,6 +26,7 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
     const [deleteDialog, setDeleteDialog] = useState('');
     const [editReport, setEditReport] = useState('');
     const [newTitle, setNewTitle] = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
@@ -36,7 +37,7 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                 })
             })
                 .then(res => res.json()).then(json => {
-                    if (Array.isArray(json)) {
+                    if (!json?.error) {
                         const reports = (json as Array<Report>).sort((a, b) => b.date - a.date);
                         setReports(reports);
                         reports.forEach(report => {
@@ -46,6 +47,8 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                             });
                         });
                         setReportsLoaded(reports.slice(0, 20));
+                    } else {
+                        setError(json.error);
                     }
                 });
         }
@@ -96,7 +99,6 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
             </Modal> : null}
             <Stack horizontal styles={{
                 root: {
-                    marginBottom: 25,
                     justifyContent: 'space-between'
                 }
             }}>
@@ -133,6 +135,17 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                     <IconButton iconProps={{
                         iconName: 'ChromeClose'
                     }} onClick={() => setDate(undefined)} />
+                </Stack.Item>
+            </Stack>
+            <Stack styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                <Stack.Item>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
                 </Stack.Item>
             </Stack>
             <Stack>
@@ -199,15 +212,23 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                                                 title: t('Delete report?'),
                                                 subText: t('Do you want to delete this report?'),
                                             }}>
+                                                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                                                    {t(error)}
+                                                </MessageBar> : null}
                                                 <DialogFooter>
                                                     <PrimaryButton onClick={() => {
-                                                        setDeleteDialog('')
                                                         fetch(props.domain + '/reports/' + report.id, {
                                                             method: 'DELETE',
                                                             headers: new Headers({
                                                                 'Authorization': localStorage.getItem('token') ?? "",
                                                                 'School': localStorage.getItem('schoolId') ?? ""
                                                             })
+                                                        }).then(res => res.json()).then(json => {
+                                                            if (!json?.error) {
+                                                                setDeleteDialog('');
+                                                            } else {
+                                                                setError(json.error);
+                                                            }
                                                         });
                                                     }} text="Delete" />
                                                     <DefaultButton onClick={() => setDeleteDialog('')} text={t('Cancel')} />
@@ -230,10 +251,12 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                                                             'Content-Type': 'application/json'
                                                         })
                                                     })
-                                                        .then(res => {
-                                                            if (res.status === 200) {
+                                                        .then(res => res.json()).then(json => {
+                                                            if (!json?.error) {
                                                                 setNewTitle('');
                                                                 setEditReport('');
+                                                            } else {
+                                                                setError(json.error);
                                                             }
                                                         });
                                                 } else {

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CommandBar, DefaultButton, DetailsList, getTheme, Modal, PrimaryButton, Stack, Text, TextField, IObjectWithKey, Selection, SelectionMode, IDialogProps, IDialogFooterProps, Dialog as DialogMS, DialogFooter as DialogFooterMS, DialogType, Dropdown, SearchBox } from '@fluentui/react';
+import { CommandBar, DefaultButton, DetailsList, getTheme, Modal, PrimaryButton, Stack, Text, TextField, IObjectWithKey, Selection, SelectionMode, IDialogProps, IDialogFooterProps, Dialog as DialogMS, DialogFooter as DialogFooterMS, DialogType, Dropdown, SearchBox, MessageBar, MessageBarType } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
 import FuzzySet from 'fuzzyset';
 import { Person, PersonSelect, User } from './interfaces';
@@ -36,6 +36,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
     const [selection, setSelection] = useState<IObjectWithKey[]>([]);
     const [searchFound, setSearchFound] = useState<Person[] | boolean>(false);
     const [namesFuzzySet, setNamesFuzzySet] = useState(FuzzySet());
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
@@ -46,8 +47,8 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                 })
             })
                 .then(res => res.json()).then(json => {
-                    if (Array.isArray(json)) {
-                        const people = json.sort((a, b) => a.name.localeCompare(b.name));
+                    if (!json?.error) {
+                        const people = (json as Person[]).sort((a, b) => a.name.localeCompare(b.name));
                         setPeople(people);
                         people.forEach(person => {
                             setNamesFuzzySet(namesFuzzySet => {
@@ -229,6 +230,13 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                     <TextField type="password" placeholder={t('New password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
                                 </Stack.Item>
                             </Stack>
+                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                                root: {
+                                    marginTop: 24
+                                }
+                            }}>
+                                {t(error)}
+                            </MessageBar> : null}
                             <div style={{
                                 margin: '16px 0px 0px',
                                 textAlign: 'right',
@@ -239,9 +247,6 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                         margin: '0 4px'
                                     }
                                 }} onClick={() => {
-                                    toggleEditUser();
-                                    setName('');
-                                    setPassword('');
                                     fetch(props.domain + '/people/' + ((selection as PersonSelect[]).map(x => x.ID))[0], {
                                         method: 'PATCH',
                                         body: JSON.stringify({
@@ -254,6 +259,14 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                             'School': localStorage.getItem('schoolId') ?? "",
                                             'Content-Type': 'application/json'
                                         })
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
+                                            toggleEditUser();
+                                            setName('');
+                                            setPassword('');
+                                        } else {
+                                            setError(json?.error);
+                                        }
                                     });
                                 }} text={t('Save')} />
                                 <DefaultButton onClick={toggleEditUser} text={t('Cancel')} styles={{
@@ -294,6 +307,13 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                     <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
                                 </Stack.Item>
                             </Stack>
+                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                                root: {
+                                    marginTop: 24
+                                }
+                            }}>
+                                {t(error)}
+                            </MessageBar> : null}
                             <div style={{
                                 margin: '16px 0px 0px',
                                 textAlign: 'right',
@@ -317,13 +337,15 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                             'School': localStorage.getItem('schoolId') ?? "",
                                             'Content-Type': 'application/json'
                                         })
-                                    }).then(res => {
-                                        if (res.status === 201) {
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             toggleAddStudentDialogIsOpen();
                                             setId('');
                                             setName('');
                                             setPassword('');
                                             setSubject('');
+                                        } else {
+                                            setError(json.error);
                                         }
                                     });
                                 }} text={t('Add')} />
@@ -370,6 +392,13 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                     })} />
                                 </Stack.Item>
                             </Stack>
+                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                                root: {
+                                    marginTop: 24
+                                }
+                            }}>
+                                {t(error)}
+                            </MessageBar> : null}
                             <div style={{
                                 margin: '16px 0px 0px',
                                 textAlign: 'right',
@@ -394,13 +423,15 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                             'School': localStorage.getItem('schoolId') ?? "",
                                             'Content-Type': 'application/json'
                                         })
-                                    }).then(res => {
-                                        if (res.status === 201) {
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             toggleAddParentDialogIsOpen();
                                             setId('');
                                             setName('');
                                             setPassword('');
                                             setSubject('');
+                                        } else {
+                                            setError(json.error);
                                         }
                                     });
                                 }} text={t('Add')} />
@@ -468,13 +499,15 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                             'School': localStorage.getItem('schoolId') ?? "",
                                             'Content-Type': 'application/json'
                                         })
-                                    }).then(res => {
-                                        if (res.status === 201) {
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             toggleHideAddTeacherDialogIsOpen();
                                             setId('');
                                             setName('');
                                             setPassword('');
                                             setSubject('');
+                                        } else {
+                                            setError(json.error);
                                         }
                                     });
                                 }} text={t('Add')} />
@@ -516,6 +549,13 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                     <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
                                 </Stack.Item>
                             </Stack>
+                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                                root: {
+                                    marginTop: 24
+                                }
+                            }}>
+                                {t(error)}
+                            </MessageBar> : null}
                             <div style={{
                                 margin: '16px 0px 0px',
                                 textAlign: 'right',
@@ -539,15 +579,17 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                             'School': localStorage.getItem('schoolId') ?? "",
                                             'Content-Type': 'application/json'
                                         })
-                                    }).then(res => {
-                                        if (res.status === 201) {
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             aeHideAddAdministratorDialogIsOpen();
                                             setId('');
                                             setName('');
                                             setPassword('');
                                             setSubject('');
+                                        } else {
+                                            setError(json.error);
                                         }
-                                    });;
+                                    });
                                 }} text={t('Add')} />
                                 <DefaultButton onClick={aeHideAddAdministratorDialogIsOpen} text={t('Cancel')} styles={{
                                     root: {
@@ -563,6 +605,9 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                     title: t('Delete users?'),
                     subText: t('Do you want to delete these users?'),
                 }}>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
                     <DialogFooter>
                         <PrimaryButton onClick={() => {
                             fetch(props.domain + '/people', {
@@ -575,15 +620,22 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                     'School': localStorage.getItem('schoolId') ?? "",
                                     'Content-Type': 'application/json'
                                 })
-                            }).then(res => {
-                                if (res.status === 200) {
+                            }).then(res => res.json()).then(json => {
+                                if (!json?.error) {
                                     toggleHideDeleteDialog();
+                                } else {
+                                    setError(json.error);
                                 }
                             });
                         }} text={t('Delete')} />
                         <DefaultButton onClick={toggleHideDeleteDialog} text={t('Cancel')} />
                     </DialogFooter>
                 </Dialog>
+            </Stack.Item>
+            <Stack.Item>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                    {t(error)}
+                </MessageBar> : null}
             </Stack.Item>
             <Stack.Item>
                 <DetailsList setKey='ID' selection={selectionConst} selectionMode={SelectionMode.multiple} selectionPreservedOnEmptyClick items={(typeof searchFound !== 'boolean' ? searchFound.map(x => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, Text, DefaultButton, PrimaryButton, SearchBox, DatePicker, IconButton, Modal, DayOfWeek } from '@fluentui/react';
+import { Stack, Text, DefaultButton, PrimaryButton, SearchBox, DatePicker, IconButton, Modal, DayOfWeek, MessageBar, MessageBarType } from '@fluentui/react';
 import { SharedColors, NeutralColors } from '@fluentui/theme';
 import FuzzySet from 'fuzzyset';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -19,6 +19,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
     const [namesFuzzySet, setNamesFuzzySet] = useState(FuzzySet());
     const [publishDate, setPublishDate] = useState<Date | undefined>(undefined);
     const [expirationDate, setExpirationDate] = useState<Date | undefined>(undefined);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
@@ -29,7 +30,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                 })
             })
                 .then(res => res.json()).then(json => {
-                    if (Array.isArray(json)) {
+                    if (!json?.error) {
                         const activities = (json as Array<Activity>).sort((a, b) => b.date - a.date);
                         setActivities(activities);
                         activities.forEach(activity => {
@@ -47,6 +48,8 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                             }
                         });
                         setActivitiesLoaded(activities.slice(0, 20));
+                    } else {
+                        setError(json.error);
                     }
                 });
         }
@@ -180,7 +183,6 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
             </Modal> : null}
             <Stack horizontal styles={{
                 root: {
-                    marginBottom: 25,
                     justifyContent: 'space-between'
                 }
             }}>
@@ -230,6 +232,17 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                     }} onClick={() => setExpirationDate(undefined)} />
                 </Stack.Item>
             </Stack>
+            <Stack styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                <Stack.Item>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
+                </Stack.Item>
+            </Stack>
             <Stack>
                 {activitiesLoaded.length > 0 ? <InfiniteScroll
                     dataLength={activitiesLoaded.length}
@@ -251,7 +264,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                 boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.25)'
                             }
                         }} onClick={() => {
-                            if (!activity.viewed) {
+                            if (!activity.viewed && !props.info?.administrator) {
                                 fetch(props.domain + '/activities/view/' + activity.id, {
                                     method: 'POST',
                                     headers: new Headers({
@@ -259,8 +272,8 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                         'School': localStorage.getItem('schoolId') ?? ""
                                     })
                                 })
-                                    .then(res => {
-                                        if (res.status === 200) {
+                                    .then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             setActivities(activities => {
                                                 activities[activities.findIndex(x => x.id === activity.id)].viewed = true;
                                                 return activities;
@@ -269,6 +282,8 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                                 activity.viewed = true;
                                                 return activity;
                                             });
+                                        } else {
+                                            setError(json.error);
                                         }
                                     });
                             } else {
@@ -285,7 +300,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                 }
                             }}>
                                 <Stack.Item>
-                                    <Text>{new Date(activity.date).toDateString()} - {activity.expiration ? (new Date(activity.expiration).toDateString()) : 'No expiration'}</Text>
+                                    <Text>{new Date(activity.date).toDateString()} - {activity.expiration ? (new Date(activity.expiration).toDateString()) : t('No expiration')}</Text>
                                 </Stack.Item>
                                 <Stack.Item>
                                     <Text variant="large">{activity.title}</Text>
@@ -299,7 +314,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                 {activity.delivery ? (<Stack.Item>
                                     <Text>{t('Delivery: something', { delivery: activity.delivery })}</Text>
                                 </Stack.Item>) : null}
-                                {props.info?.id !== activity.author.id ? <Stack.Item>
+                                {props.info?.id !== activity.author.id && !props.info?.administrator ? <Stack.Item>
                                     <DefaultButton styles={{
                                         root: {
                                             marginTop: 25,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Stack, Text, IconButton, Dialog as DialogMS, DialogType, DialogFooter as DialogFooterMS, PrimaryButton, DefaultButton, IDialogFooterProps, IDialogProps } from '@fluentui/react';
+import { Stack, Text, IconButton, Dialog as DialogMS, DialogType, DialogFooter as DialogFooterMS, PrimaryButton, DefaultButton, IDialogFooterProps, IDialogProps, MessageBar, MessageBarType } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
 import { NeutralColors } from '@fluentui/theme';
 import EditMessage from './EditMessage';
@@ -19,6 +19,7 @@ const ReadMessage = (props: { domain: string | undefined; messages: Message[]; s
     const [reRenderValue, reRender] = useState(true);
     const [hideDeleteDialog, { toggle: toggleHideDeleteDialog }] = useBoolean(true);
     const [editMessage, setEditMessage] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         props.setSelectedMessage(props.messages.find((x: any) => x.id === props.selectedMessage?.id) ?? null);
@@ -36,16 +37,24 @@ const ReadMessage = (props: { domain: string | undefined; messages: Message[]; s
                     title: t('Delete message?'),
                     subText: t('Do you want to delete this message?'),
                 }}>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
                     <DialogFooter>
                         <PrimaryButton onClick={() => {
-                            toggleHideDeleteDialog();
-                            props.setSelectedMessage(null);
                             fetch(props.domain + '/messages/' + props.selectedMessage?.id, {
                                 method: 'DELETE',
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
                                     'School': localStorage.getItem('schoolId') ?? ""
                                 })
+                            }).then(res => res.json()).then(json => {
+                                if (!json?.error) {
+                                    toggleHideDeleteDialog();
+                                    props.setSelectedMessage(null);
+                                } else {
+                                    setError(json.error);
+                                }
                             });
                         }} text={t('Delete')} />
                         <DefaultButton onClick={toggleHideDeleteDialog} text={t('Cancel')} />

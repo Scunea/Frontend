@@ -1,11 +1,11 @@
 import React, { useState, createRef, useEffect } from 'react';
 import ReactDOMServer from 'react-dom/server'
-import { Stack, Text, TextField, IconButton, Dialog as DialogMS, DialogType, DialogFooter as DialogFooterMS, PrimaryButton, DefaultButton, DocumentCard, DocumentCardActivity, DocumentCardTitle, Image, Link, SearchBox, TooltipHost, IDialogProps, IDialogFooterProps } from '@fluentui/react';
+import { Stack, Text, TextField, IconButton, Dialog as DialogMS, DialogType, DialogFooter as DialogFooterMS, PrimaryButton, DefaultButton, DocumentCard, DocumentCardActivity, DocumentCardTitle, Image, Link, SearchBox, TooltipHost, IDialogProps, IDialogFooterProps, MessageBar, MessageBarType } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
 import { NeutralColors, SharedColors } from '@fluentui/theme';
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import EditActivity from './EditActivity';
-import { Activity, FilesPlusPlus, IdPlusName, User } from './interfaces';
+import { Activity, FilesPlusPlus, IdPlusName, IdPlusUrl, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
 const ReadActivity = (props: { domain: string | undefined; activities: Activity[]; setActivities: (value: React.SetStateAction<Activity[]>) => void; selectedActivity: Activity; setSelectedActivity: (value: React.SetStateAction<Activity | null>) => void; namesFuzzySet: FuzzySet; info: User; }) => {
@@ -27,6 +27,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
     const [comments, setComments] = useState('');
     const [files, setFiles] = useState<any[]>([]);
     const [delivered, setDelivered] = useState<FilesPlusPlus[]>([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (props.selectedActivity?.author.id === props.info?.id) {
@@ -55,25 +56,31 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                     title: t('Delete activity?'),
                     subText: t('Do you want to delete this activity?'),
                 }}>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
                     <DialogFooter>
                         <PrimaryButton onClick={() => {
-                            toggleHideDeleteDialog();
-                            props.setSelectedActivity(null);
                             fetch(props.domain + '/activities/' + props.selectedActivity?.id, {
                                 method: 'DELETE',
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
                                     'School': localStorage.getItem('schoolId') ?? ""
                                 })
+                            }).then(res => res.json()).then(json => {
+                                if (!json?.error) {
+                                    toggleHideDeleteDialog();
+                                    props.setSelectedActivity(null);
+                                } else {
+                                    setError(json.error);
+                                }
                             });
                         }} text={t('Delete')} />
                         <DefaultButton onClick={toggleHideDeleteDialog} text={t('Cancel')} />
                     </DialogFooter>
                 </Dialog>
-            </Stack.Item>
-                <Stack.Item>
-                    <IconButton iconProps={{ iconName: editActivity ? 'View' : 'Edit' }} onClick={() => setEditActivity(!editActivity)} />
-                </Stack.Item></> : null}
+            </Stack.Item></> : null}
+            <IconButton iconProps={{ iconName: editActivity ? 'View' : 'Edit' }} onClick={() => setEditActivity(!editActivity)} />
             <Stack.Item styles={{
                 root: {
                     position: 'absolute',
@@ -135,7 +142,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
             }}>
                 <Text>{props.selectedActivity?.description.length > 0 ? props.selectedActivity?.description : t('No description')}</Text>
             </Stack.Item>
-            {props.info?.id !== props.selectedActivity?.author.id ? (<><Stack.Item styles={{
+            {props.info?.id !== props.selectedActivity?.author.id && !props.info?.administrator ? (<><Stack.Item styles={{
                 root: {
                     marginBottom: 25
                 }
@@ -179,45 +186,48 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                 <PrimaryButton text={t('Send to review')} iconProps={{ iconName: 'Send' }} onClick={() => {
                                     const thingy: File[] = files.map(x => Array.from(x)).flat() as File[];
                                     if (thingy.length > 0) {
-                                        let filesIds: string[] = [];
+                                        const form = new FormData();
                                         thingy.forEach((file: File) => {
-                                            const form = new FormData();
                                             form.append('upload', file);
-                                            fetch(props.domain + '/upload', {
-                                                method: 'POST',
-                                                body: form,
-                                                headers: new Headers({
-                                                    'Authorization': localStorage.getItem('token') ?? "",
-                                                    'School': localStorage.getItem('schoolId') ?? ""
-                                                })
-                                            }).then(res => res.json()).then(json => {
-                                                filesIds.push(json.id);
-                                                if (thingy.length === filesIds.length) {
-                                                    fetch(props.domain + '/activities/deliver/' + props.selectedActivity?.id, {
-                                                        method: 'POST',
-                                                        body: JSON.stringify({
-                                                            comments: comments,
-                                                            files: filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; }),
-                                                        }),
-                                                        headers: new Headers({
-                                                            'Authorization': localStorage.getItem('token') ?? "",
-                                                            'School': localStorage.getItem('schoolId') ?? "",
-                                                            'Content-Type': 'application/json'
-                                                        })
+                                        });
+                                        fetch(props.domain + '/upload', {
+                                            method: 'POST',
+                                            body: form,
+                                            headers: new Headers({
+                                                'Authorization': localStorage.getItem('token') ?? "",
+                                                'School': localStorage.getItem('schoolId') ?? ""
+                                            })
+                                        }).then(res => res.json()).then(json => {
+                                            const filesIds = (json as IdPlusUrl[]).map(x => x.id);
+                                            if (!json?.error) {
+                                                fetch(props.domain + '/activities/deliver/' + props.selectedActivity?.id, {
+                                                    method: 'POST',
+                                                    body: JSON.stringify({
+                                                        comments: comments,
+                                                        files: filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; }),
+                                                    }),
+                                                    headers: new Headers({
+                                                        'Authorization': localStorage.getItem('token') ?? "",
+                                                        'School': localStorage.getItem('schoolId') ?? "",
+                                                        'Content-Type': 'application/json'
                                                     })
-                                                        .then(res => {
-                                                            if (res.status === 200) {
-                                                                props.setActivities((activities: Activity[]) => {
-                                                                    activities[activities.findIndex(x => x.id === props.selectedActivity?.id)].result = 'Unchecked';
-                                                                    return activities;
-                                                                });
-                                                                props.setSelectedActivity(null);
-                                                                setComments('');
-                                                                setFiles([]);
-                                                            }
-                                                        });
-                                                }
-                                            });
+                                                })
+                                                    .then(res => res.json()).then(json => {
+                                                        if (!json?.error) {
+                                                            props.setActivities((activities: Activity[]) => {
+                                                                activities[activities.findIndex(x => x.id === props.selectedActivity?.id)].result = 'Unchecked';
+                                                                return activities;
+                                                            });
+                                                            props.setSelectedActivity(null);
+                                                            setComments('');
+                                                            setFiles([]);
+                                                        } else {
+                                                            setError(json.error);
+                                                        }
+                                                    });
+                                            } else {
+                                                setError(json.error);
+                                            }
                                         });
                                     } else {
                                         fetch(props.domain + '/activities/deliver/' + props.selectedActivity?.id, {
@@ -231,8 +241,8 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                                 'Content-Type': 'application/json'
                                             })
                                         })
-                                            .then(res => {
-                                                if (res.status === 200) {
+                                            .then(res => res.json()).then(json => {
+                                                if (!json?.error) {
                                                     props.setActivities((activities: Activity[]) => {
                                                         activities[activities.findIndex(x => x.id === props.selectedActivity?.id)].result = 'Unchecked';
                                                         return activities;
@@ -240,6 +250,8 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                                     props.setSelectedActivity(null);
                                                     setComments('');
                                                     setFiles([]);
+                                                } else {
+                                                    setError(json.error);
                                                 }
                                             });
                                     }
@@ -281,7 +293,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                             }
                         }}>{file.name}</DefaultButton> : null)}
                     </Stack.Item>
-                </>) : null}</>) : (<>
+                </>) : null}</>) : !props.info?.administrator ? (<>
                     <SearchBox placeholder={t('Search')} underlined onChange={event => {
                         if (event?.target.value) {
                             let searched: FilesPlusPlus[] = [];
@@ -355,14 +367,16 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                             'Content-Type': 'application/json'
                                         })
                                     })
-                                        .then(res => {
-                                            if (res.status === 200) {
+                                        .then(res => res.json()).then(json => {
+                                            if (!json?.error) {
                                                 props.setActivities((activities: Activity[]) => {
                                                     (activities[activities.findIndex(x => x.id === props.selectedActivity?.id)].result as any)[Object.keys(props.selectedActivity?.delivered)[i]] = 'Accepted';
                                                     props.setSelectedActivity(activities.find(x => x.id === props.selectedActivity?.id) ?? null);
                                                     reRender(!reRenderValue);
                                                     return activities;
                                                 });
+                                            } else {
+                                                setError(json.error);
                                             }
 
                                         });
@@ -381,14 +395,16 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                             'Content-Type': 'application/json'
                                         })
                                     })
-                                        .then(res => {
-                                            if (res.status === 200) {
+                                        .then(res => res.json()).then(json => {
+                                            if (!json?.error) {
                                                 props.setActivities((activities: Activity[]) => {
                                                     (activities[activities.findIndex(x => x.id === props.selectedActivity?.id)].result as any)[Object.keys(props.selectedActivity?.delivered)[i]] = 'Rejected';
                                                     props.setSelectedActivity(activities.find(x => x.id === props.selectedActivity?.id) ?? null);
                                                     reRender(!reRenderValue);
                                                     return activities;
                                                 });
+                                            } else {
+                                                setError(json.error);
                                             }
 
                                         });
@@ -399,7 +415,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                             { name: thingy.name, profileImageSrc: '' }
                         ]} />
                     </DocumentCard></Stack.Item>
-                    )}</Stack></>)}
+                    )}</Stack></>) : null}
         </Stack>) : (
             <EditActivity domain={props.domain} info={props.info} oldActivity={props.selectedActivity} editActivity={editActivity} setEditActivity={setEditActivity}></EditActivity>)}
     </Stack>);

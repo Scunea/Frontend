@@ -3,6 +3,11 @@ export interface IdPlusName {
     name: string;
 };
 
+export interface IdPlusUrl {
+    id: string;
+    url: string;
+};
+
 export interface FilesPlusPlus {
     files: IdPlusName[];
     comments: string;

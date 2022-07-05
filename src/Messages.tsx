@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stack, PrimaryButton, SearchBox, DatePicker, IconButton, Text, FontIcon, DayOfWeek, Modal } from '@fluentui/react';
+import { Stack, PrimaryButton, SearchBox, DatePicker, IconButton, Text, FontIcon, DayOfWeek, Modal, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
 import FuzzySet from 'fuzzyset';
 import InfiniteScroll from 'react-infinite-scroll-component';
@@ -17,6 +17,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
     const [newMessage, setNewMessage] = useState(false);
     const [titlesFuzzySet, setTitlesFuzzySet] = useState(FuzzySet());
     const [date, setDate] = useState<Date | undefined>(undefined);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
@@ -27,7 +28,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                 })
             })
                 .then(res => res.json()).then(json => {
-                    if (Array.isArray(json)) {
+                    if (!json?.error) {
                         const messages = (json as Array<Message>).sort((a, b) => b.date - a.date);
                         setMessages(messages);
                         messages.forEach(message => {
@@ -37,6 +38,8 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                             });
                         });
                         setMessagesLoaded(messages.slice(0, 20));
+                    } else {
+                        setError(json.error);
                     }
                 });
         }
@@ -133,7 +136,6 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
             </Modal> : null}
             <Stack horizontal styles={{
                 root: {
-                    marginBottom: 25,
                     justifyContent: 'space-between'
                 }
             }}>
@@ -170,6 +172,17 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                     <IconButton iconProps={{
                         iconName: 'ChromeClose'
                     }} onClick={() => setDate(undefined)} />
+                </Stack.Item>
+            </Stack>
+            <Stack styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                <Stack.Item>
+                    {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} >
+                        {t(error)}
+                    </MessageBar> : null}
                 </Stack.Item>
             </Stack>
             <Stack>

@@ -1,5 +1,5 @@
 import React, { createRef, useState } from 'react';
-import { Stack, IconButton, TextField, DefaultButton, PrimaryButton } from '@fluentui/react';
+import { Stack, IconButton, TextField, DefaultButton, PrimaryButton, MessageBar, MessageBarType } from '@fluentui/react';
 import { User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
@@ -9,11 +9,19 @@ const NewReport = (props: { domain: string | undefined; info: User; newReport: b
 
     const [newReportTitle, setNewReportTitle] = useState('');
     const [newReportFile, setNewReportFile] = useState<File | null>(null);
+    const [error, setError] = useState('');
 
     const { t } = useTranslation();
 
     return (
         <Stack>
+            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                {t(error)}
+            </MessageBar> : null}
             <Stack styles={{
                 root: {
                     position: 'absolute',
@@ -52,28 +60,35 @@ const NewReport = (props: { domain: string | undefined; info: User; newReport: b
                                         body: form,
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? ""
+                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'simple': "true"
                                         })
                                     }).then(res => res.json()).then(json => {
-                                        fetch(props.domain + '/reports', {
-                                            method: 'POST',
-                                            body: JSON.stringify({
-                                                title: newReportTitle,
-                                                file: { id: json.id, name: newReportFile.name },
-                                            }),
-                                            headers: new Headers({
-                                                'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? "",
-                                                'Content-Type': 'application/json'
+                                        if (!json?.error) {
+                                            fetch(props.domain + '/reports', {
+                                                method: 'POST',
+                                                body: JSON.stringify({
+                                                    title: newReportTitle,
+                                                    file: { id: json.id, name: newReportFile.name },
+                                                }),
+                                                headers: new Headers({
+                                                    'Authorization': localStorage.getItem('token') ?? "",
+                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'Content-Type': 'application/json'
+                                                })
                                             })
-                                        })
-                                            .then(res => {
-                                                if (res.status === 201) {
-                                                    setNewReportTitle('');
-                                                    setNewReportFile(null);
-                                                    props.setNewReport(false);
-                                                }
-                                            });
+                                                .then(res => res.json()).then(json => {
+                                                    if (!json?.error) {
+                                                        setNewReportTitle('');
+                                                        setNewReportFile(null);
+                                                        props.setNewReport(false);
+                                                    } else {
+                                                        setError(json.error);
+                                                    }
+                                                });
+                                        } else {
+                                            setError(json.error);
+                                        }
                                     });
                                 }
                             }} disabled={!(newReportTitle?.length > 0 && newReportFile !== null)} />

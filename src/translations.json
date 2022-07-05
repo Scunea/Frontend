@@ -44,6 +44,7 @@
             "Your grades": "Your grades",
             "Your child's grades": "Your children's grades",
             "Something grades": "{{something}} grades",
+            "Somebody's grades": "{{user}}'s grades",
             "Choose a student": "Choose a student",
             "Full name": "Full name",
             "Deliberation": "Deliberation",
@@ -105,7 +106,12 @@
             "Delete users?": "Delete users?",
             "Do you want to delete these users?": "Do you want to delete these users?",
             "Access denied.": "Access denied.",
-            "Your account is not authorized to view this page.": "Your account is not authorized to view this page."
+            "Your account is not authorized to view this page.": "Your account is not authorized to view this page.",
+            "Not found.": "Not found.",
+            "Missing required argument.": "Missing required argument.",
+            "Invalid credentials.": "Invalid credentials.",
+            "Not authorized.": "Not authorized.",
+            "Server error.": "Server error."
         }
     },
     "es": {
@@ -153,6 +159,7 @@
             "Your grades": "Tus calificaciones",
             "Your child's grades": "Calificaciones de tu hijo",
             "Something grades": "Calificaciones de {{something}}",
+            "Somebody's grades": "Calificaciones de {{user}}",
             "Choose a student": "Elige un estudiante",
             "Full name": "Nombre completo",
             "Deliberation": "Ponderación",
@@ -215,7 +222,12 @@
             "Delete users?": "¿Eliminar usuarios?",
             "Do you want to delete these users?": "¿Deseas eliminar estos usuarios?",
             "Access denied.": "Acceso denegado.",
-            "Your account is not authorized to view this page.": "Su cuenta no está autorizada para ver esta página."
+            "Your account is not authorized to view this page.": "Su cuenta no está autorizada para ver esta página.",
+            "Not found.": "No se encuentra.",
+            "Missing required argument.": "Falta un argumento requerido.",
+            "Invalid credentials.": "Credenciales inválidas.",
+            "Not authorized.": "No está autorizado.",
+            "Server error.": "Error del servidor."
         }
     }
 }

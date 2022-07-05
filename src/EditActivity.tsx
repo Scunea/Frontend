@@ -1,7 +1,7 @@
 import React, { createRef, useEffect, useState } from 'react';
-import { IDropdownOption, DropdownMenuItemType, Stack, IconButton, Dropdown, TextField, DefaultButton, PrimaryButton, DatePicker, DayOfWeek } from '@fluentui/react';
+import { IDropdownOption, DropdownMenuItemType, Stack, IconButton, Dropdown, TextField, DefaultButton, PrimaryButton, DatePicker, DayOfWeek, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
-import { Activity, IdPlusName, SimpleUser, User } from './interfaces';
+import { Activity, IdPlusName, IdPlusUrl, SimpleUser, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
 const EditActivity = (props: { domain: string | undefined; info: User; oldActivity: Activity; editActivity: boolean; setEditActivity: (value: React.SetStateAction<boolean>) => void; }) => {
@@ -17,6 +17,7 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
     const [receiver, setReceiver] = useState<string[]>([]);
     const [oldFiles, setOldFiles] = useState<IdPlusName[]>([]);
     const [files, setFiles] = useState<any[]>([]);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         setTitle(props.oldActivity?.title);
@@ -48,6 +49,13 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                 padding: 25
             }
         }}>
+            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
+                {t(error)}
+            </MessageBar> : null}
             <Stack.Item styles={{
                 root: {
                     marginBottom: 25
@@ -150,51 +158,53 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                         <PrimaryButton text={t('Edit activity')} iconProps={{ iconName: 'Edit' }} onClick={() => {
                             const thingy: File[] = files.map(x => Array.from(x)).flat() as File[];
                             if (thingy.length > 0) {
-                                let filesIds: string[] = [];
+                                const form = new FormData();
                                 thingy.forEach((file: File) => {
-                                    const form = new FormData();
                                     form.append('upload', file);
-                                    fetch(props.domain + '/upload', {
-                                        method: 'POST',
-                                        body: form,
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? ""
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        filesIds.push(json.id);
-                                        if (thingy.length === filesIds.length) {
-                                            fetch(props.domain + '/activities/' + props.oldActivity?.id, {
-                                                method: 'PATCH',
-                                                body: JSON.stringify({
-                                                    title: title,
-                                                    description: description,
-                                                    files: oldFiles.concat(filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; })),
-                                                    type: type,
-                                                    delivery: delivery,
-                                                    expiration: expirationDate ? expirationDate.getTime() : false,
-                                                    receiver: receiver
-                                                }),
-                                                headers: new Headers({
-                                                    'Authorization': localStorage.getItem('token') ?? "",
-                                                    'School': localStorage.getItem('schoolId') ?? "",
-                                                    'Content-Type': 'application/json'
-                                                })
+                                });
+                                fetch(props.domain + '/upload', {
+                                    method: 'POST',
+                                    body: form,
+                                    headers: new Headers({
+                                        'Authorization': localStorage.getItem('token') ?? "",
+                                        'School': localStorage.getItem('schoolId') ?? ""
+                                    })
+                                }).then(res => res.json()).then(json => {
+                                    if (!json?.error) {
+                                        fetch(props.domain + '/activities/' + props.oldActivity?.id, {
+                                            method: 'PATCH',
+                                            body: JSON.stringify({
+                                                title: title,
+                                                description: description,
+                                                files: oldFiles.concat((json as IdPlusUrl[]).map(x => x.id).map((x, i) => { return { id: x, name: thingy[i].name }; })),
+                                                type: type,
+                                                delivery: delivery,
+                                                expiration: expirationDate ? expirationDate.getTime() : false,
+                                                receiver: receiver
+                                            }),
+                                            headers: new Headers({
+                                                'Authorization': localStorage.getItem('token') ?? "",
+                                                'School': localStorage.getItem('schoolId') ?? "",
+                                                'Content-Type': 'application/json'
                                             })
-                                                .then(res => {
-                                                    if (res.status === 200) {
-                                                        setTitle('');
-                                                        setType('');
-                                                        setDelivery('');
-                                                        setDescription('');
-                                                        setExpirationDate(undefined);
-                                                        setReceiver([]);
-                                                        setFiles([]);
-                                                        props.setEditActivity(false);
-                                                    }
-                                                });
-                                        }
-                                    });
+                                        })
+                                            .then(res => res.json()).then(json => {
+                                                if (!json?.error) {
+                                                    setTitle('');
+                                                    setType('');
+                                                    setDelivery('');
+                                                    setDescription('');
+                                                    setExpirationDate(undefined);
+                                                    setReceiver([]);
+                                                    setFiles([]);
+                                                    props.setEditActivity(false);
+                                                } else {
+                                                    setError(json.error);
+                                                }
+                                            });
+                                    } else {
+                                        setError(json.error);
+                                    }
                                 });
                             } else {
                                 fetch(props.domain + '/activities/' + props.oldActivity?.id, {
@@ -213,8 +223,8 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                                         'Content-Type': 'application/json'
                                     })
                                 })
-                                    .then(res => {
-                                        if (res.status === 200) {
+                                    .then(res => res.json()).then(json => {
+                                        if (!json?.error) {
                                             setTitle('');
                                             setType('');
                                             setDelivery('');
@@ -223,6 +233,8 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                                             setReceiver([]);
                                             setFiles([]);
                                             props.setEditActivity(false);
+                                        } else {
+                                            setError(json.error);
                                         }
                                     });
                             }
