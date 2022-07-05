@@ -198,7 +198,7 @@ export const App: React.FunctionComponent = () => {
                       margin: '0 4px'
                     }
                   }} onClick={() => {
-                    fetch(domain + '/people', {
+                    fetch(domain + '/account', {
                       method: 'PATCH',
                       body: JSON.stringify({
                         name: name,

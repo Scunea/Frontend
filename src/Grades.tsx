@@ -222,6 +222,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     {t(error)}
                 </MessageBar> : null}
             </Stack.Item>
+            {props.info?.avaliable.filter(x => x.type === 'Student').length < 1 ? <Text>{t('No students!')}</Text> : null}
             {props.info?.avaliable.filter(x => x.type === 'Student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
                 root: {
                     display: 'flex',

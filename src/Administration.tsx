@@ -21,17 +21,11 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
         }
     }), []);
 
-    const [editUser, { toggle: toggleEditUser }] = useBoolean(false);
-    const [addStudentDialogIsOpen, { toggle: toggleAddStudentDialogIsOpen }] = useBoolean(false);
-    const [addParentDialogIsOpen, { toggle: toggleAddParentDialogIsOpen }] = useBoolean(false);
-    const [addTeacherDialogIsOpen, { toggle: toggleHideAddTeacherDialogIsOpen }] = useBoolean(false);
-    const [addAdministratorDialogIsOpen, { toggle: aeHideAddAdministratorDialogIsOpen }] = useBoolean(false);
+    const [addUserDialogIsOpen, { toggle: toggleAddUserDialogIsOpen }] = useBoolean(false);
     const [hideDeleteDialog, { toggle: toggleHideDeleteDialog }] = useBoolean(true);
-    const [id, setId] = useState('');
-    const [password, setPassword] = useState('');
-    const [child, setChild] = useState('');
-    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
     const [subject, setSubject] = useState('');
+    const [type, setType] = useState('');
     const [people, setPeople] = useState<Person[]>([]);
     const [selection, setSelection] = useState<IObjectWithKey[]>([]);
     const [searchFound, setSearchFound] = useState<Person[] | boolean>(false);
@@ -69,6 +63,8 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                         newPeople.push({
                             id: data.user.id,
                             name: data.user.name,
+                            email: data.user.email,
+                            number: data.user.number,
                             subject: data.user.subject,
                             child: data.user.child,
                             type: data.user.type.split('').map((x: string, i: number) => i === 0 ? x.toUpperCase() : x).join('')
@@ -122,54 +118,10 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                     items={[
                         {
                             key: 'add',
-                            text: t('Add'),
+                            text: t('Invite'),
                             iconProps: { iconName: 'Add' },
-                            subMenuProps: {
-                                items: [
-                                    {
-                                        key: 'student',
-                                        text: t('Student'),
-                                        iconProps: { iconName: 'Edit' },
-                                        onClick: () => {
-                                            toggleAddStudentDialogIsOpen();
-                                        }
-                                    },
-                                    {
-                                        key: 'parent',
-                                        text: t('Parent'),
-                                        iconProps: { iconName: 'Family' },
-                                        onClick: () => {
-                                            toggleAddParentDialogIsOpen();
-                                        }
-                                    },
-                                    {
-                                        key: 'teacher',
-                                        text: t('Teacher'),
-                                        iconProps: { iconName: 'People' },
-                                        onClick: () => {
-                                            toggleHideAddTeacherDialogIsOpen();
-                                        }
-                                    },
-                                    {
-                                        key: 'administrator',
-                                        text: t('Administrator'),
-                                        iconProps: { iconName: 'Admin' },
-                                        onClick: () => {
-                                            aeHideAddAdministratorDialogIsOpen();
-                                        }
-                                    }
-                                ]
-                            },
-                        },
-                        {
-                            key: 'edit',
-                            text: t('Edit'),
-                            iconProps: { iconName: 'Edit' },
-                            disabled: selection.length !== 1,
                             onClick: () => {
-                                setName(people.find(x => x.id === ((selection as PersonSelect[]).map(x => x.ID))[0])?.name ?? '');
-                                setSubject(people.find(x => x.id === ((selection as PersonSelect[]).map(x => x.ID))[0])?.subject ?? '');
-                                toggleEditUser();
+                                toggleAddUserDialogIsOpen();
                             }
                         },
                         {
@@ -201,7 +153,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                         }
                     ]}
                 />
-                <Modal isOpen={editUser} onDismiss={toggleEditUser}>
+                <Modal isOpen={addUserDialogIsOpen} onDismiss={toggleAddUserDialogIsOpen}>
                     <Stack>
                         <div style={{
                             borderTop: `4px solid ${getTheme().palette.themePrimary}`
@@ -211,7 +163,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                 color: getTheme().palette.themePrimary,
                                 padding: '16px 46px 20px 24px'
                             }
-                        }}>{t('Edit somebody\'s profile', { user: people.find(x => x.id === ((selection as PersonSelect[]).map(x => x.ID))[0])?.name })}</Text>
+                        }}>{t('Invite user')}</Text>
                         <Stack.Item styles={{
                             root: {
                                 padding: '0px 24px 24px'
@@ -221,13 +173,17 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                 childrenGap: 25
                             }}>
                                 <Stack.Item>
-                                    <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
+                                    <TextField placeholder="Email" value={email} underlined onChange={(event, value) => setEmail(value ?? '')}></TextField>
                                 </Stack.Item>
-                                {people.find(x => x.id === ((selection as PersonSelect[]).map(x => x.ID))[0])?.type === 'Teacher' ? <Stack.Item>
-                                    <TextField placeholder={t('Subject')} value={subject} underlined onChange={(event, value) => setSubject(value ?? '')}></TextField>
-                                </Stack.Item> : null}
                                 <Stack.Item>
-                                    <TextField type="password" placeholder={t('New password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
+                                    <Dropdown selectedKey={type ? type : undefined} onChange={(event, item) => setType(item?.key?.toString() ?? 'student')} options={[
+                                        { key: 'student', text: t('Student') },
+                                        { key: 'teacher', text: t('Teacher') },
+                                        { key: 'administrator', text: t('Administrator') }
+                                    ]} />
+                                </Stack.Item>
+                                <Stack.Item>
+                                    {type === 'teacher' ? <TextField placeholder={t('Subject')} value={subject} underlined onChange={(event, value) => setSubject(value ?? '')}></TextField> : null}
                                 </Stack.Item>
                             </Stack>
                             {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
@@ -242,95 +198,17 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                 textAlign: 'right',
                                 marginRight: '-4px'
                             }}>
-                                <PrimaryButton disabled={!name && !password} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} onClick={() => {
-                                    fetch(props.domain + '/people/' + ((selection as PersonSelect[]).map(x => x.ID))[0], {
-                                        method: 'PATCH',
-                                        body: JSON.stringify({
-                                            name: name,
-                                            subject: subject,
-                                            password: password
-                                        }),
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
-                                            'Content-Type': 'application/json'
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        if (!json?.error) {
-                                            toggleEditUser();
-                                            setName('');
-                                            setPassword('');
-                                        } else {
-                                            setError(json?.error);
-                                        }
-                                    });
-                                }} text={t('Save')} />
-                                <DefaultButton onClick={toggleEditUser} text={t('Cancel')} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} />
-                            </div>
-                        </Stack.Item>
-                    </Stack>
-                </Modal>
-                <Modal isOpen={addStudentDialogIsOpen} onDismiss={toggleAddStudentDialogIsOpen}>
-                    <Stack>
-                        <div style={{
-                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
-                        }}></div>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Add student')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 25
-                            }}>
-                                <Stack.Item>
-                                    <TextField placeholder="ID" value={id} underlined onChange={(event, value) => setId(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
-                                </Stack.Item>
-                            </Stack>
-                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
-                                root: {
-                                    marginTop: 24
-                                }
-                            }}>
-                                {t(error)}
-                            </MessageBar> : null}
-                            <div style={{
-                                margin: '16px 0px 0px',
-                                textAlign: 'right',
-                                marginRight: '-4px'
-                            }}>
-                                <PrimaryButton disabled={!id || !name || !password} styles={{
+                                <PrimaryButton disabled={!email || !type || ((type === 'teacher' && !subject))} styles={{
                                     root: {
                                         margin: '0 4px'
                                     }
                                 }} onClick={() => {
                                     fetch(props.domain + '/people', {
-                                        method: 'POST',
+                                        method: 'PUT',
                                         body: JSON.stringify({
-                                            id: id,
-                                            name: name,
-                                            password: password,
-                                            type: 'student'
+                                            email: email,
+                                            type: type,
+                                            subject: subject
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
@@ -339,259 +217,17 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                         })
                                     }).then(res => res.json()).then(json => {
                                         if (!json?.error) {
-                                            toggleAddStudentDialogIsOpen();
-                                            setId('');
-                                            setName('');
-                                            setPassword('');
+                                            toggleAddUserDialogIsOpen();
+                                            setEmail('');
+                                            setType('');
+                                            setSubject('');
                                             setSubject('');
                                         } else {
                                             setError(json.error);
                                         }
                                     });
-                                }} text={t('Add')} />
-                                <DefaultButton onClick={toggleAddStudentDialogIsOpen} text={t('Cancel')} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} />
-                            </div>
-                        </Stack.Item>
-                    </Stack>
-                </Modal>
-                <Modal isOpen={addParentDialogIsOpen} onDismiss={toggleAddParentDialogIsOpen}>
-                    <Stack>
-                        <div style={{
-                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
-                        }}></div>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Add parent')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 25
-                            }}>
-                                <Stack.Item>
-                                    <TextField placeholder="ID" value={id} underlined onChange={(event, value) => setId(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <Dropdown placeholder={t('Child')} onChange={(event, value) => setChild(value?.key.toString() ?? '')} options={people.filter(x => x.type === 'Student').map(x => {
-                                        return { key: x.id, text: x.name };
-                                    })} />
-                                </Stack.Item>
-                            </Stack>
-                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
-                                root: {
-                                    marginTop: 24
-                                }
-                            }}>
-                                {t(error)}
-                            </MessageBar> : null}
-                            <div style={{
-                                margin: '16px 0px 0px',
-                                textAlign: 'right',
-                                marginRight: '-4px'
-                            }}>
-                                <PrimaryButton disabled={!id || !name || !password || !child} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} onClick={() => {
-                                    fetch(props.domain + '/people', {
-                                        method: 'POST',
-                                        body: JSON.stringify({
-                                            id: id,
-                                            name: name,
-                                            password: password,
-                                            type: 'parent',
-                                            child: child
-                                        }),
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
-                                            'Content-Type': 'application/json'
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        if (!json?.error) {
-                                            toggleAddParentDialogIsOpen();
-                                            setId('');
-                                            setName('');
-                                            setPassword('');
-                                            setSubject('');
-                                        } else {
-                                            setError(json.error);
-                                        }
-                                    });
-                                }} text={t('Add')} />
-                                <DefaultButton onClick={toggleAddParentDialogIsOpen} text={t('Cancel')} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} />
-                            </div>
-                        </Stack.Item>
-                    </Stack>
-                </Modal>
-                <Modal isOpen={addTeacherDialogIsOpen} onDismiss={toggleHideAddTeacherDialogIsOpen}>
-                    <Stack>
-                        <div style={{
-                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
-                        }}></div>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Add teacher')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 25
-                            }}>
-                                <Stack.Item>
-                                    <TextField placeholder="ID" value={id} underlined onChange={(event, value) => setId(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField placeholder={t('Subject')} value={subject} underlined onChange={(event, value) => setSubject(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
-                                </Stack.Item>
-                            </Stack>
-                            <div style={{
-                                margin: '16px -4px 0px 0px',
-                                textAlign: 'right'
-                            }}>
-                                <PrimaryButton disabled={!id || !name || !password} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} onClick={() => {
-                                    fetch(props.domain + '/people', {
-                                        method: 'POST',
-                                        body: JSON.stringify({
-                                            id: id,
-                                            name: name,
-                                            password: password,
-                                            subject: subject,
-                                            type: 'teacher'
-                                        }),
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
-                                            'Content-Type': 'application/json'
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        if (!json?.error) {
-                                            toggleHideAddTeacherDialogIsOpen();
-                                            setId('');
-                                            setName('');
-                                            setPassword('');
-                                            setSubject('');
-                                        } else {
-                                            setError(json.error);
-                                        }
-                                    });
-                                }} text={t('Add')} />
-                                <DefaultButton onClick={toggleHideAddTeacherDialogIsOpen} text={t('Cancel')} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} />
-                            </div>
-                        </Stack.Item>
-                    </Stack>
-                </Modal>
-                <Modal isOpen={addAdministratorDialogIsOpen} onDismiss={aeHideAddAdministratorDialogIsOpen}>
-                    <Stack>
-                        <div style={{
-                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
-                        }}></div>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Add administrator')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 25
-                            }}>
-                                <Stack.Item>
-                                    <TextField placeholder="ID" value={id} underlined onChange={(event, value) => setId(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
-                                </Stack.Item>
-                                <Stack.Item>
-                                    <TextField type="password" placeholder={t('Password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
-                                </Stack.Item>
-                            </Stack>
-                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
-                                root: {
-                                    marginTop: 24
-                                }
-                            }}>
-                                {t(error)}
-                            </MessageBar> : null}
-                            <div style={{
-                                margin: '16px 0px 0px',
-                                textAlign: 'right',
-                                marginRight: '-4px'
-                            }}>
-                                <PrimaryButton disabled={!id || !name || !password} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} onClick={() => {
-                                    fetch(props.domain + '/people', {
-                                        method: 'POST',
-                                        body: JSON.stringify({
-                                            id: id,
-                                            name: name,
-                                            password: password,
-                                            type: 'administrator'
-                                        }),
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
-                                            'Content-Type': 'application/json'
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        if (!json?.error) {
-                                            aeHideAddAdministratorDialogIsOpen();
-                                            setId('');
-                                            setName('');
-                                            setPassword('');
-                                            setSubject('');
-                                        } else {
-                                            setError(json.error);
-                                        }
-                                    });
-                                }} text={t('Add')} />
-                                <DefaultButton onClick={aeHideAddAdministratorDialogIsOpen} text={t('Cancel')} styles={{
+                                }} text={t('Invite')} />
+                                <DefaultButton onClick={toggleAddUserDialogIsOpen} text={t('Cancel')} styles={{
                                     root: {
                                         margin: '0 4px'
                                     }
@@ -613,7 +249,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                             fetch(props.domain + '/people', {
                                 method: 'DELETE',
                                 body: JSON.stringify({
-                                    tos: (selection as PersonSelect[]).map(x => x.ID)
+                                    tos: (selection as PersonSelect[]).map(x => people.find(y => y.email === x.Email)?.id)
                                 }),
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
@@ -640,16 +276,18 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
             <Stack.Item>
                 <DetailsList setKey='ID' selection={selectionConst} selectionMode={SelectionMode.multiple} selectionPreservedOnEmptyClick items={(typeof searchFound !== 'boolean' ? searchFound.map(x => {
                     return {
-                        ID: x.id,
                         Name: x.name,
+                        Email: x.email,
+                        Number: x.number ?? 'N/A',
                         Subject: x.subject ?? 'N/A',
                         Child: x.type === 'Parent' ? x.child?.name : 'N/A',
                         Type: x.type
                     }
                 }) : people.map(x => {
                     return {
-                        ID: x.id,
                         Name: x.name,
+                        Email: x.email,
+                        Number: x.number ?? 'N/A',
                         Subject: x.subject ?? 'N/A',
                         Child: x.type === 'Parent' ? x.child?.name : 'N/A',
                         Type: x.type

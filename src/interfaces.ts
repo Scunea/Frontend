@@ -40,14 +40,17 @@ export interface Child {
 export interface Person {
     id: string;
     name: string;
+    email: string;
+    number: string;
     type: string;
     subject: string;
     child: Child;
 };
 
 export interface PersonSelect {
-    ID: string;
     Name: string;
+    Email: string;
+    Number: string;
     Type: string;
     Subject: string;
     Child: string;
