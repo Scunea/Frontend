@@ -20,11 +20,11 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             fetch(props.domain + '/messages', {
                 headers: new Headers({
                     'Authorization': localStorage.getItem('token') ?? "",
-                    'School': localStorage.getItem('schoolId') ?? ""
+                    'School': localStorage.getItem('school') ?? ""
                 })
             })
                 .then(res => res.json()).then(json => {
@@ -46,6 +46,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
 
         if (props.ws) {
             props.ws.onmessage = (message: MessageEvent) => {
+                if(message.data !== 'Ping!') {
                 const data = JSON.parse(message.data);
                 if (data.event === 'newMessage') {
                     setMessages(messages => {
@@ -80,6 +81,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                         return newMessages;
                     });
                 }
+            }
             };
         }
     }, []);

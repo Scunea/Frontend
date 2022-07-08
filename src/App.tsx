@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Stack, Text, MessageBar, MessageBarButton, MessageBarType, Persona, PersonaSize, ContextualMenu, ContextualMenuItemType, getTheme, DefaultButton, Modal, PrimaryButton, TextField } from '@fluentui/react';
+import { Stack, Text, MessageBar, MessageBarButton, MessageBarType, Persona, PersonaSize, ContextualMenu, ContextualMenuItemType, getTheme, DefaultButton, Modal, PrimaryButton, TextField, Link, Image, IconButton } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
 import { NeutralColors, SharedColors } from '@fluentui/theme';
 import i18n from './i18n';
@@ -13,7 +13,7 @@ import Reports from './Reports';
 import Teachers from './Teachers';
 import Activities from './Activities';
 import Administration from './Administration';
-import { User } from './interfaces';
+import { IdPlusName, OTP, User } from './interfaces';
 import './fixes.css';
 import { useTranslation } from 'react-i18next';
 
@@ -30,29 +30,66 @@ export const App: React.FunctionComponent = () => {
   const [selected, setSelected] = useState('');
   const [showPersonaMenu, setShowPersonaMenu] = useState(false);
   const [editUser, { toggle: toggleEditUser }] = useBoolean(false);
+  const [setupTfa, { toggle: toggleSetupTfa }] = useBoolean(false);
+  const [deleteAccount, { toggle: toggleDeleteAccount }] = useBoolean(false);
+  const [parents, { toggle: toggleParents }] = useBoolean(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpInfo, setOtpInfo] = useState<OTP>();
   const [name, setName] = useState('');
   const [language, setLanguage] = useState('en');
+  const [childrenInvites, setChildrenInvites] = useState<IdPlusName[]>([]);
+  const [parentsInvites, setParentsInvites] = useState<IdPlusName[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     setSelected(document.location.hash.split('?')[0].slice(1));
 
-    if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+    if (localStorage.getItem("token") && localStorage.getItem("school")) {
       fetch(domain + '/info', {
         headers: new Headers({
           'Authorization': localStorage.getItem('token') ?? "",
-          'School': localStorage.getItem('schoolId') ?? ""
+          'School': localStorage.getItem('school') ?? ""
         })
       })
-        .then(res => {
-          if (res.status === 200) {
-            setWs(connectWebsocket(localStorage.getItem('token') ?? '', localStorage.getItem('schoolId') ?? ''));
-            return res.json();
+        .then(res => res.json()).then(json => {
+          if (!json?.error) {
+            setWs(connectWebsocket(localStorage.getItem('token') ?? '', localStorage.getItem('school') ?? ''));
+            setUserInfo(json);
           } else {
-            return {};
+            setError(json.error);
           }
-        }).then(json => setUserInfo(json as User));
+        });
+
+        fetch(domain + '/pendingchildren', {
+          headers: new Headers({
+            'Authorization': localStorage.getItem('token') ?? "",
+            'School': localStorage.getItem('school') ?? ""
+          })
+        })
+          .then(res => res.json()).then(json => {
+            if (!json?.error) {
+              setChildrenInvites(json);
+            } else {
+              setError(json.error);
+            }
+          });
+
+          fetch(domain + '/pendingparents', {
+            headers: new Headers({
+              'Authorization': localStorage.getItem('token') ?? "",
+              'School': localStorage.getItem('school') ?? ""
+            })
+          })
+            .then(res => res.json()).then(json => {
+              if (!json?.error) {
+                setParentsInvites(json);
+              } else {
+                setError(json.error);
+              }
+            });
     }
 
   }, []);
@@ -60,6 +97,9 @@ export const App: React.FunctionComponent = () => {
   useEffect(() => {
     if (ws) {
       ws.onmessage = (message: MessageEvent) => {
+        if(message.data === 'Ping!') {
+          ws.send('Pong!');
+        } else {
         const data = JSON.parse(message.data);
         if (data.event === 'newUser') {
           setUserInfo(userInfo => {
@@ -69,7 +109,7 @@ export const App: React.FunctionComponent = () => {
                 id: data.user.id,
                 name: data.user.name,
                 teacher: data.user.subject,
-                child: data.user.child,
+                children: data.user.children,
                 type: data.user.type.split('').map((x: string, i: number) => i === 0 ? x.toUpperCase() : x).join('')
               });
               return newUserInfo;
@@ -102,7 +142,38 @@ export const App: React.FunctionComponent = () => {
               return userInfo;
             }
           })
+        } else if(data.event === 'parentInvited') {
+          setParentsInvites(parents => {
+            let newParents = [...parents];
+            newParents.push(data.parent);
+            return newParents;
+          });
+        } else if(data.event === 'childrenInvited') {
+          setChildrenInvites(children => {
+            let newChildren = [...children];
+            newChildren.push(data.children);
+            return newChildren;
+          });
+        } else if(data.event === 'parentInviteRemoved') {
+          setParentsInvites(parents => {
+            let newParents = [...parents];
+            const index = newParents.findIndex(x => x?.id === data.id);
+            if(index > -1) {
+            newParents.splice(data.id, 1);
+            }
+            return newParents;
+          });
+        } else if(data.event === 'childrenInviteRemoved') {
+          setChildrenInvites(children => {
+            let newChildren = [...children];
+            const index = newChildren.findIndex(x => x?.id === data.id);
+            if(index > -1) {
+            newChildren.splice(data.id, 1);
+            }
+            return newChildren;
+          });
         }
+      }
       }
     }
   }, [ws]);
@@ -116,6 +187,22 @@ export const App: React.FunctionComponent = () => {
     localStorage.setItem('language', language);
     i18n.changeLanguage(language);
   }, [language]);
+
+  useEffect(() => {
+    if(setupTfa) {
+      fetch(domain + '/otp', {
+        method: 'POST',
+        headers: new Headers({
+          'Authorization': localStorage.getItem('token') ?? "",
+          'School': localStorage.getItem('school') ?? "",
+        })
+      }).then(res => res.json()).then(json => {
+        if (!json?.error) {
+          setOtpInfo(json);
+        }
+      });
+    }
+  }, [setupTfa]);
 
   function connectWebsocket(token: string, school: string) {
     const ws = new WebSocket('ws://' + domain?.split('://')[1] + '/socket?token=' + encodeURIComponent(token) + '&school=' + encodeURIComponent(school));
@@ -178,14 +265,31 @@ export const App: React.FunctionComponent = () => {
                 <Stack tokens={{
                   childrenGap: 25
                 }}>
-                  {userInfo?.administrator ? <Stack.Item>
+                   <Stack.Item>
                     <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
-                  </Stack.Item> : null}
+                  </Stack.Item>
                   <Stack.Item>
                     <TextField type="password" placeholder={t('New password')} value={password} underlined onChange={(event, value) => setPassword(value ?? '')}></TextField>
                   </Stack.Item>
                   <Stack.Item>
                     <TextField type="password" placeholder={t('Current password')} value={currentPassword} underlined onChange={(event, value) => setCurrentPassword(value ?? '')}></TextField>
+                  </Stack.Item>
+                  {!userInfo?.tfa ? <Stack.Item>
+                    <Link onClick={() => {
+                      toggleEditUser();
+                      toggleSetupTfa();
+                    }}>Set up 2FA</Link>
+                  </Stack.Item> : <Stack.Item>
+                    <Link onClick={() => {
+                      toggleEditUser();
+                      toggleSetupTfa();
+                    }}>Remove 2FA</Link>
+                  </Stack.Item>}
+                  <Stack.Item>
+                    <Link onClick={() => {
+                      toggleEditUser();
+                      toggleDeleteAccount();
+                    }}>Delete account</Link>
                   </Stack.Item>
                 </Stack>
                 <div style={{
@@ -207,11 +311,11 @@ export const App: React.FunctionComponent = () => {
                       }),
                       headers: new Headers({
                         'Authorization': localStorage.getItem('token') ?? "",
-                        'School': localStorage.getItem('schoolId') ?? "",
+                        'School': localStorage.getItem('school') ?? "",
                         'Content-Type': 'application/json'
                       })
-                    }).then(res => {
-                      if (res.status === 200) {
+                    }).then(res => res.json()).then(json => {
+                      if (!json?.error) {
 
                         toggleEditUser();
                         setCurrentPassword('');
@@ -229,6 +333,310 @@ export const App: React.FunctionComponent = () => {
               </Stack.Item>
             </Stack>
           </Modal>
+          <Modal isOpen={setupTfa} onDismiss={toggleSetupTfa}>
+            <Stack>
+              <div style={{
+                borderTop: `4px solid ${getTheme().palette.themePrimary}`
+              }}></div>
+              <Text variant={'xLarge'} styles={{
+                root: {
+                  color: getTheme().palette.themePrimary,
+                  padding: '16px 46px 20px 24px'
+                }
+              }}>{t('Set up 2FA')}</Text>
+              <Stack.Item styles={{
+                root: {
+                  padding: '0px 24px 24px'
+                }
+              }}>
+                <Stack tokens={{
+                  childrenGap: 25
+                }}>
+                  <Stack.Item align="center">
+                    <Image src={otpInfo?.qr} alt={otpInfo?.secret} />
+                  </Stack.Item>
+                  <Stack.Item>
+                    <Text>{otpInfo?.secret}</Text>
+                  </Stack.Item>
+                  <Stack.Item>
+                    <TextField type="password" placeholder={t('Current password')} value={currentPassword} underlined onChange={(event, value) => setCurrentPassword(value ?? '')}></TextField>
+                  </Stack.Item>
+                  <Stack.Item>
+                    <TextField placeholder={t('OTP')} value={otp} underlined onChange={(event, value) => setOtp(value ?? '')}></TextField>
+                  </Stack.Item>
+                </Stack>
+                <div style={{
+                  margin: '16px 0px 0px',
+                  textAlign: 'right',
+                  marginRight: '-4px'
+                }}>
+                  <PrimaryButton disabled={!password || !otp} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} onClick={() => {
+                    fetch(domain + '/otp/' + otpInfo?.secret, {
+                      method: 'POST',
+                      body: JSON.stringify({
+                        password: currentPassword,
+                        otp: otp
+                      }),
+                      headers: new Headers({
+                        'Authorization': localStorage.getItem('token') ?? "",
+                        'School': localStorage.getItem('school') ?? "",
+                        'Content-Type': 'application/json'
+                      })
+                    }).then(res => res.json()).then(json => {
+                      if (!json?.error) {
+                        toggleSetupTfa();
+                        toggleEditUser();
+                        setCurrentPassword('');
+                        setOtp('');
+                      }
+                    });
+                  }} text={t('Save')} />
+                  <DefaultButton onClick={() => {
+                    toggleSetupTfa();
+                    toggleEditUser();
+                  }} text={t('Cancel')} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} />
+                </div>
+              </Stack.Item>
+            </Stack>
+          </Modal>
+          <Modal isOpen={deleteAccount} onDismiss={toggleDeleteAccount}>
+            <Stack>
+              <div style={{
+                borderTop: `4px solid ${getTheme().palette.themePrimary}`
+              }}></div>
+              <Text variant={'xLarge'} styles={{
+                root: {
+                  color: getTheme().palette.themePrimary,
+                  padding: '16px 46px 20px 24px'
+                }
+              }}>{t('Delete your account?')}</Text>
+              <Stack.Item styles={{
+                root: {
+                  padding: '0px 24px 24px'
+                }
+              }}>
+                <Stack tokens={{
+                  childrenGap: 25
+                }}>
+                  <Stack.Item>
+                    <Text>{t('Public data will be kept.')}</Text>
+                  </Stack.Item>
+                  <Stack.Item>
+                    <TextField type="password" placeholder={t('Current password')} value={currentPassword} underlined onChange={(event, value) => setCurrentPassword(value ?? '')}></TextField>
+                  </Stack.Item>
+                  {userInfo?.tfa ? <Stack.Item>
+                    <TextField placeholder={t('OTP')} value={otp} underlined onChange={(event, value) => setOtp(value ?? '')}></TextField>
+                  </Stack.Item> : null}
+                </Stack>
+                <div style={{
+                  margin: '16px 0px 0px',
+                  textAlign: 'right',
+                  marginRight: '-4px'
+                }}>
+                  <PrimaryButton disabled={!currentPassword || !(otp || !userInfo?.tfa)} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} onClick={() => {
+                    fetch(domain + '/account', {
+                      method: 'DELETE',
+                      body: JSON.stringify({
+                        password: currentPassword,
+                        otp: otp
+                      }),
+                      headers: new Headers({
+                        'Authorization': localStorage.getItem('token') ?? "",
+                        'School': localStorage.getItem('school') ?? "",
+                        'Content-Type': 'application/json'
+                      })
+                    }).then(res => res.json()).then(json => {
+                      if (!json?.error) {
+                        localStorage.removeItem('school');
+                        localStorage.removeItem('token');
+                        window.location.reload();
+                      }
+                    });
+                  }} text={t('Delete')} />
+                  <DefaultButton onClick={() => {
+                    toggleSetupTfa();
+                    toggleEditUser();
+                  }} text={t('Cancel')} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} />
+                </div>
+              </Stack.Item>
+            </Stack>
+          </Modal>
+          <Modal isOpen={parents} onDismiss={toggleParents}>
+                    <Stack>
+                        <div style={{
+                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
+                        }}></div>
+                        <Text variant={'xLarge'} styles={{
+                            root: {
+                                color: getTheme().palette.themePrimary,
+                                padding: '16px 46px 20px 24px'
+                            }
+                        }}>{t('Invite your parents')}</Text>
+                        <Stack.Item styles={{
+                            root: {
+                                padding: '0px 24px 24px'
+                            }
+                        }}>
+                            <Stack tokens={{
+                                childrenGap: 25
+                            }}>
+                                <Stack.Item>
+                                    <TextField placeholder="Email" value={email} underlined onChange={(event, value) => setEmail(value ?? '')}></TextField>
+                                </Stack.Item>
+                            </Stack>
+                            <div style={{
+                                margin: '16px 0px 0px',
+                                textAlign: 'right',
+                                marginRight: '-4px'
+                            }}>
+                                <PrimaryButton disabled={!email} styles={{
+                                    root: {
+                                        margin: '0 4px'
+                                    }
+                                }} onClick={() => {
+                                    fetch(domain + '/parents', {
+                                        method: 'PUT',
+                                        body: JSON.stringify({
+                                            email: email
+                                        }),
+                                        headers: new Headers({
+                                            'Authorization': localStorage.getItem('token') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
+                                            'Content-Type': 'application/json'
+                                        })
+                                    }).then(res => res.json()).then(json => {
+                                        if (!json?.error) {
+                                            toggleParents();
+                                            setEmail('');
+                                        } else {
+                                            setError(json.error);
+                                        }
+                                    });
+                                }} text={t('Invite')} />
+                            </div>
+                        </Stack.Item>
+                        <Text variant={'xLarge'} styles={{
+                            root: {
+                                color: getTheme().palette.themePrimary,
+                                padding: '16px 46px 20px 24px'
+                            }
+                        }}>{t('Accept an invite')}</Text>
+                        <Stack.Item styles={{
+                            root: {
+                                padding: '0px 24px 24px'
+                            }
+                        }}>
+                            <Stack tokens={{
+                                childrenGap: 10
+                            }}>
+                                {childrenInvites.length > 0 ? childrenInvites.map(student => <DefaultButton key={student.id} styles={{
+                        root: {
+                            minHeight: 75,
+                            display: 'flex'
+                        }
+                    }} onClick={() => {
+                      fetch(domain + '/accept/' + student.id, {
+                        method: 'POST',
+                        headers: new Headers({
+                            'Authorization': localStorage.getItem('token') ?? "",
+                            'School': localStorage.getItem('school') ?? ""
+                        })
+                    }).then(res => res.json()).then(json => {
+                        if (!json?.error) {
+                          toggleParents();
+                          setEmail('');
+                        } else {
+                            setError(json.error);
+                        }
+                    });
+                    }}><Persona {...{
+                        text: student.name
+                    }} /></DefaultButton>) : <Text>{t('No invites available.')}</Text>}
+                            </Stack>
+                        </Stack.Item>
+                        <Text variant={'xLarge'} styles={{
+                            root: {
+                                color: getTheme().palette.themePrimary,
+                                padding: '16px 46px 20px 24px'
+                            }
+                        }}>{t('Your pending invites')}</Text>
+                        <Stack.Item styles={{
+                            root: {
+                                padding: '0px 24px 24px'
+                            }
+                        }}>
+                            <Stack tokens={{
+                                childrenGap: 10
+                            }}>
+                                {parentsInvites.length > 0 ? parentsInvites.map(parent => <Stack horizontal verticalAlign="center" key={parent.id}>
+                                  <Stack.Item grow>
+                                    <Persona {...{
+                        text: parent.name,
+                        styles: {
+                          root: {
+                            minHeight: 75,
+                            display: 'flex'
+                        }
+                        }
+                    }} />
+                    </Stack.Item>
+                    <Stack.Item>
+                    <IconButton iconProps={{ iconName: 'ChromeClose' }} onClick={() => {
+                    fetch(domain + '/parents/' + parent.id, {
+                      method: 'DELETE',
+                      headers: new Headers({
+                          'Authorization': localStorage.getItem('token') ?? "",
+                          'School': localStorage.getItem('school') ?? ""
+                      })
+                  }).then(res => res.json()).then(json => {
+                      if (!json?.error) {
+                        toggleParents();
+                        setEmail('');
+                      } else {
+                          setError(json.error);
+                      }
+                  });
+                }}></IconButton>
+                    </Stack.Item>
+                    </Stack>) : <Text>{t('You didn\'t invite anyone.')}</Text>}
+                            </Stack>
+                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                                root: {
+                                    marginTop: 24
+                                }
+                            }}>
+                                {t(error)}
+                            </MessageBar> : null}
+                            <div style={{
+                                margin: '16px 0px 0px',
+                                textAlign: 'right',
+                                marginRight: '-4px'
+                            }}>
+                            <DefaultButton onClick={toggleParents} text={t('Cancel')} styles={{
+                                    root: {
+                                        margin: '0 4px'
+                                    }
+                                }} />
+                                </div>
+                        </Stack.Item>
+                    </Stack>
+                </Modal>
           <Persona ref={personaRef} {...{
             text: userInfo?.name,
             hidePersonaDetails: true,
@@ -242,16 +650,6 @@ export const App: React.FunctionComponent = () => {
           }} />
           <ContextualMenu hidden={!showPersonaMenu} onDismiss={() => setShowPersonaMenu(false)} target={personaRef} onItemClick={(event, item) => {
             setShowPersonaMenu(false);
-            if (item?.key === 'editProfile') {
-
-            } else if (item?.key === 'signOut') {
-              localStorage.removeItem('schoolId');
-              localStorage.removeItem('token');
-              window.location.reload();
-            } else if (item?.key === 'switchSchool') {
-              localStorage.removeItem('schoolId');
-              window.location.reload();
-            }
           }} items={[
             {
               key: 'username',
@@ -272,9 +670,21 @@ export const App: React.FunctionComponent = () => {
               }
             },
             {
+              key: 'parents',
+              iconProps: { iconName: 'People' },
+              text: t('Parents'),
+              onClick: () => {
+                toggleParents();
+              }
+            },
+            {
               key: 'switchSchool',
               iconProps: { iconName: 'Switch' },
-              text: t('Switch school')
+              text: t('Switch school'),
+              onClick: () => {
+                localStorage.removeItem('school');
+                window.location.reload();
+              }
             },
             {
               key: 'changeLanguage',
@@ -304,7 +714,12 @@ export const App: React.FunctionComponent = () => {
             {
               key: 'signOut',
               iconProps: { iconName: 'SignOut' },
-              text: t('Sign out')
+              text: t('Sign out'),
+              onClick: () => {
+                localStorage.removeItem('school');
+                localStorage.removeItem('token');
+                window.location.reload();
+              }
             }
           ]} />
         </Stack.Item>
@@ -352,7 +767,7 @@ export const App: React.FunctionComponent = () => {
       }} >
         {t('We lost connection to the WebSocket. This will prevent automatically loading new posts. Would you like to refresh the page to try to reconnect?')}
       </MessageBar> : null}
-    </>) : (<Stack horizontalAlign='center' verticalAlign='center' verticalFill>
+    </>) : (<Stack horizontalAlign='center' verticalAlign='center' verticalFill horizontal wrap>
       <Login domain={domain}></Login>
     </Stack>)
   );

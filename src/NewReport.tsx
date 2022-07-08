@@ -60,7 +60,7 @@ const NewReport = (props: { domain: string | undefined; info: User; newReport: b
                                         body: form,
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'simple': "true"
                                         })
                                     }).then(res => res.json()).then(json => {
@@ -73,7 +73,7 @@ const NewReport = (props: { domain: string | undefined; info: User; newReport: b
                                                 }),
                                                 headers: new Headers({
                                                     'Authorization': localStorage.getItem('token') ?? "",
-                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'School': localStorage.getItem('school') ?? "",
                                                     'Content-Type': 'application/json'
                                                 })
                                             })

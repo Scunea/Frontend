@@ -21,11 +21,11 @@ const Schedule = (props: { language: string; domain: string | undefined; info: U
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             fetch(props.domain + '/activities', {
                 headers: new Headers({
                     'Authorization': localStorage.getItem('token') ?? "",
-                    'School': localStorage.getItem('schoolId') ?? ""
+                    'School': localStorage.getItem('school') ?? ""
                 })
             })
                 .then(res => res.json()).then(json => {

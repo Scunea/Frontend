@@ -22,11 +22,11 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             fetch(props.domain + '/activities', {
                 headers: new Headers({
                     'Authorization': localStorage.getItem('token') ?? "",
-                    'School': localStorage.getItem('schoolId') ?? ""
+                    'School': localStorage.getItem('school') ?? ""
                 })
             })
                 .then(res => res.json()).then(json => {
@@ -56,6 +56,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
 
         if (props.ws) {
             props.ws.onmessage = (message: MessageEvent) => {
+                if(message.data !== 'Ping!') {
                 const data = JSON.parse(message.data);
                 if (data.event === 'newActivity') {
                     setActivities(activities => {
@@ -111,6 +112,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                         return newActivities;
                     });
                 }
+            }
             };
         }
 
@@ -269,7 +271,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                     method: 'POST',
                                     headers: new Headers({
                                         'Authorization': localStorage.getItem('token') ?? "",
-                                        'School': localStorage.getItem('schoolId') ?? ""
+                                        'School': localStorage.getItem('school') ?? ""
                                     })
                                 })
                                     .then(res => res.json()).then(json => {

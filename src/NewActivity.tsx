@@ -159,7 +159,7 @@ const NewActivity = (props: { domain: string | undefined; info: User; newActivit
                                         body: form,
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? ""
+                                            'School': localStorage.getItem('school') ?? ""
                                         })
                                     }).then(res => res.json()).then(json => {
                                         if (!json?.error) {
@@ -176,7 +176,7 @@ const NewActivity = (props: { domain: string | undefined; info: User; newActivit
                                                 }),
                                                 headers: new Headers({
                                                     'Authorization': localStorage.getItem('token') ?? "",
-                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'School': localStorage.getItem('school') ?? "",
                                                     'Content-Type': 'application/json'
                                                 })
                                             })
@@ -211,7 +211,7 @@ const NewActivity = (props: { domain: string | undefined; info: User; newActivit
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'Content-Type': 'application/json'
                                         })
                                     })

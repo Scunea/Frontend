@@ -13,12 +13,12 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             if (props.info?.teacher) {
                 fetch(props.domain + '/grades', {
                     headers: new Headers({
                         'Authorization': localStorage.getItem('token') ?? "",
-                        'School': localStorage.getItem('schoolId') ?? ""
+                        'School': localStorage.getItem('school') ?? ""
                     })
                 })
                     .then(res => res.json()).then(json => {
@@ -34,22 +34,24 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
 
         if (props.ws) {
             props.ws.onmessage = (message: MessageEvent) => {
+                if(message.data !== 'Ping!') {
                 const data = JSON.parse(message.data);
                 if (data.event === 'newGrades') {
                     setData(data.grades);
                 }
+            }
             }
         }
 
     }, []);
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             if (props.info?.administrator && selectedUser) {
                 fetch(props.domain + '/grades/' + selectedUser.id, {
                     headers: new Headers({
                         'Authorization': localStorage.getItem('token') ?? "",
-                        'School': localStorage.getItem('schoolId') ?? ""
+                        'School': localStorage.getItem('school') ?? ""
                     })
                 })
                     .then(res => res.json()).then(json => {
@@ -72,6 +74,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
             }
         }}>
             <Text variant="xxLarge">{t('Something grades', { something: props.info?.teacher })}</Text>
+            <Text>{t('Note: This data isn\'t updated automatically to prevent data loss.')}</Text>
             <Stack.Item styles={{
                 root: {
                     marginTop: '25px !important'
@@ -132,7 +135,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                         body: JSON.stringify(data),
                         headers: new Headers({
                             'Authorization': localStorage.getItem('token') ?? "",
-                            'School': localStorage.getItem('schoolId') ?? "",
+                            'School': localStorage.getItem('school') ?? "",
                             'Content-Type': 'application/json'
                         })
                     }).then(res => res.json()).then(json => {
@@ -155,6 +158,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 }}></IconButton>
             </Stack.Item>
             <Text variant="xxLarge">{t('Somebody\'s grades', { user: selectedUser.name })}</Text>
+            <Text>{t('Note: This data isn\'t updated automatically to prevent data loss.')}</Text>
             <Stack.Item styles={{
                 root: {
                     marginTop: '25px !important'
@@ -236,7 +240,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     text: x.name
                 }}></Persona>
             </DefaultButton>)}
-        </Stack> : !props.info?.child ? <Stack styles={{
+        </Stack> : !props.info?.children ? <Stack styles={{
             root: {
                 padding: 25
             }
@@ -299,7 +303,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 padding: 25
             }
         }}>
-            <Text variant="xxLarge">{t('Your child\'s grades')}</Text>
+            <Text variant="xxLarge">{t('Your children\'s grades')}</Text>
             <Stack.Item styles={{
                 root: {
                     marginTop: '25px !important'

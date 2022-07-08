@@ -29,11 +29,11 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             fetch(props.domain + '/reports', {
                 headers: new Headers({
                     'Authorization': localStorage.getItem('token') ?? "",
-                    'School': localStorage.getItem('schoolId') ?? ""
+                    'School': localStorage.getItem('school') ?? ""
                 })
             })
                 .then(res => res.json()).then(json => {
@@ -221,7 +221,7 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                                                             method: 'DELETE',
                                                             headers: new Headers({
                                                                 'Authorization': localStorage.getItem('token') ?? "",
-                                                                'School': localStorage.getItem('schoolId') ?? ""
+                                                                'School': localStorage.getItem('school') ?? ""
                                                             })
                                                         }).then(res => res.json()).then(json => {
                                                             if (!json?.error) {
@@ -247,7 +247,7 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                                                         }),
                                                         headers: new Headers({
                                                             'Authorization': localStorage.getItem('token') ?? "",
-                                                            'School': localStorage.getItem('schoolId') ?? "",
+                                                            'School': localStorage.getItem('school') ?? "",
                                                             'Content-Type': 'application/json'
                                                         })
                                                     })

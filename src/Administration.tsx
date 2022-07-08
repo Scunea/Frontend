@@ -33,11 +33,11 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (localStorage.getItem("token") && localStorage.getItem("schoolId")) {
+        if (localStorage.getItem("token") && localStorage.getItem("school")) {
             fetch(props.domain + '/people', {
                 headers: new Headers({
                     'Authorization': localStorage.getItem('token') ?? "",
-                    'School': localStorage.getItem('schoolId') ?? ""
+                    'School': localStorage.getItem('school') ?? ""
                 })
             })
                 .then(res => res.json()).then(json => {
@@ -56,6 +56,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
 
         if (props.ws) {
             props.ws.onmessage = (message: MessageEvent) => {
+                if(message.data !== 'Ping!') {
                 const data = JSON.parse(message.data);
                 if (data.event === 'newUser') {
                     setPeople(people => {
@@ -64,9 +65,8 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                             id: data.user.id,
                             name: data.user.name,
                             email: data.user.email,
-                            number: data.user.number,
                             subject: data.user.subject,
-                            child: data.user.child,
+                            children: data.user.children,
                             type: data.user.type.split('').map((x: string, i: number) => i === 0 ? x.toUpperCase() : x).join('')
                         });
                         newPeople = newPeople.sort((a, b) => a.name.localeCompare(b.name));
@@ -101,6 +101,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                         return newPeople;
                     });
                 }
+            }
             }
         }
     }, []);
@@ -177,13 +178,13 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                 </Stack.Item>
                                 <Stack.Item>
                                     <Dropdown selectedKey={type ? type : undefined} onChange={(event, item) => setType(item?.key?.toString() ?? 'student')} options={[
-                                        { key: 'student', text: t('Student') },
+                                        { key: 'student', text: t('Student/Parent') },
                                         { key: 'teacher', text: t('Teacher') },
                                         { key: 'administrator', text: t('Administrator') }
                                     ]} />
                                 </Stack.Item>
                                 <Stack.Item>
-                                    {type === 'teacher' ? <TextField placeholder={t('Subject')} value={subject} underlined onChange={(event, value) => setSubject(value ?? '')}></TextField> : null}
+                                    {type === 'teacher' ? <TextField placeholder={t('Subject')} value={subject} underlined onChange={(event, value) => setSubject(value ?? '')}></TextField> : type === 'student' ? <Text>Note: To add a parent, the student needs to link them to their account first.</Text> : null}
                                 </Stack.Item>
                             </Stack>
                             {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
@@ -212,7 +213,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'Content-Type': 'application/json'
                                         })
                                     }).then(res => res.json()).then(json => {
@@ -253,7 +254,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                                 }),
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
-                                    'School': localStorage.getItem('schoolId') ?? "",
+                                    'School': localStorage.getItem('school') ?? "",
                                     'Content-Type': 'application/json'
                                 })
                             }).then(res => res.json()).then(json => {
@@ -278,18 +279,16 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                     return {
                         Name: x.name,
                         Email: x.email,
-                        Number: x.number ?? 'N/A',
                         Subject: x.subject ?? 'N/A',
-                        Child: x.type === 'Parent' ? x.child?.name : 'N/A',
+                        Children: x.type === 'Parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
                         Type: x.type
                     }
                 }) : people.map(x => {
                     return {
                         Name: x.name,
                         Email: x.email,
-                        Number: x.number ?? 'N/A',
                         Subject: x.subject ?? 'N/A',
-                        Child: x.type === 'Parent' ? x.child?.name : 'N/A',
+                        Children: x.type === 'Parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
                         Type: x.type
                     }
                 })).map(x => {

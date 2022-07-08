@@ -27,19 +27,26 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                 let thingy: IDropdownOption[] = [];
                 thingy.push({ key: 'selectors', text: t('Selectors'), itemType: DropdownMenuItemType.Header });
                 thingy.push({ key: 'all', text: t('All') });
-                if (props.info?.teacher) {
+                if (props.info?.teacher || props.info?.administrator) {
+                    thingy.push({ key: 'allAdministrators', text: t('All administrators') });
+                    thingy.push({ key: 'allTeachers', text: t('All teachers') });
                     thingy.push({ key: 'allStudents', text: t('All students') });
                     thingy.push({ key: 'allParents', text: t('All parents') });
-                    thingy.push({ key: 'allTeachers', text: t('All teachers') });
-                    thingy.push({ key: 'parentsHeader', text: t('Parents'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
-                    thingy.push({ key: 'divider', text: '-', itemType: DropdownMenuItemType.Divider },);
+                    thingy.push({ key: 'divider', text: '-', itemType: DropdownMenuItemType.Divider });
+                    thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
+                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                     thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
                     thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                     thingy.push({ key: 'studentsHeader', text: t('Students'), itemType: DropdownMenuItemType.Header });
                     thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    thingy.push({ key: 'parentsHeader', text: t('Parents'), itemType: DropdownMenuItemType.Header });
+                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                 } else {
+                    thingy.push({ key: 'allAdministrators', text: t('All administrators') });
                     thingy.push({ key: 'allTeachers', text: t('All teachers') });
+                    thingy.push({ key: 'divider', text: '-', itemType: DropdownMenuItemType.Divider });
+                    thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
+                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                     thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
                     thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                 }
@@ -93,7 +100,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                 setReceiver([]);
                             }
                         } else if (item?.key === 'allStudents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => !x.teacher && !x.child).map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => !x.teacher && x.children.length < 1).map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -120,7 +127,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                 });
                             }
                         } else if (item?.key === 'allParents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.child).map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.children.length > 0).map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -211,7 +218,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                             uploadUrl: props.domain + '/upload',
                             headers: {
                                 'Authorization': localStorage.getItem('token') ?? "",
-                                'School': localStorage.getItem('schoolId') ?? "",
+                                'School': localStorage.getItem('school') ?? "",
                                 'simple': "true"
                             }
                         }
@@ -242,7 +249,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                         body: form,
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? ""
+                                            'School': localStorage.getItem('school') ?? ""
                                         })
                                     }).then(res => res.json()).then(json => {
                                         if (!json?.error) {
@@ -259,7 +266,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                                 }),
                                                 headers: new Headers({
                                                     'Authorization': localStorage.getItem('token') ?? "",
-                                                    'School': localStorage.getItem('schoolId') ?? "",
+                                                    'School': localStorage.getItem('school') ?? "",
                                                     'Content-Type': 'application/json'
                                                 })
                                             })
@@ -289,7 +296,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'Content-Type': 'application/json'
                                         })
                                     })

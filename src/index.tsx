@@ -18,7 +18,7 @@ mergeStyles({
     padding: 0,
     height: '100vh',
   },
-  ':global(body)': {
+  ':global(body):not(.loginBody)': {
     backgroundColor: NeutralColors.gray10
   },
 });

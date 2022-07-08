@@ -41,19 +41,17 @@ export interface Person {
     id: string;
     name: string;
     email: string;
-    number: string;
     type: string;
     subject: string;
-    child: Child;
+    children: Child[];
 };
 
 export interface PersonSelect {
     Name: string;
     Email: string;
-    Number: string;
     Type: string;
     Subject: string;
-    Child: string;
+    Children: string[];
 };
 
 export interface Grade {
@@ -70,18 +68,19 @@ export interface Grade {
 export interface User {
     id: string;
     name: string;
+    tfa: boolean;
     teacher: string;
     administrator: boolean;
     grades: Grade[];
     avaliable: SimpleUser[];
-    child: string
+    children: string[]
 };
 
 export interface SimpleUser {
     id: string;
     name: string;
     teacher: string;
-    child: string;
+    children: string[];
     type: string;
 };
 
@@ -118,3 +117,9 @@ export interface Viewed {
     viewed: boolean;
     name: string;
 };
+
+export interface OTP {
+    secret: string;
+    uri: string;
+    qr: string;
+}

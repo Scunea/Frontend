@@ -46,7 +46,7 @@ const ReadMessage = (props: { domain: string | undefined; messages: Message[]; s
                                 method: 'DELETE',
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
-                                    'School': localStorage.getItem('schoolId') ?? ""
+                                    'School': localStorage.getItem('school') ?? ""
                                 })
                             }).then(res => res.json()).then(json => {
                                 if (!json?.error) {

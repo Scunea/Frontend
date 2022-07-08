@@ -65,7 +65,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                 method: 'DELETE',
                                 headers: new Headers({
                                     'Authorization': localStorage.getItem('token') ?? "",
-                                    'School': localStorage.getItem('schoolId') ?? ""
+                                    'School': localStorage.getItem('school') ?? ""
                                 })
                             }).then(res => res.json()).then(json => {
                                 if (!json?.error) {
@@ -195,7 +195,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                             body: form,
                                             headers: new Headers({
                                                 'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? ""
+                                                'School': localStorage.getItem('school') ?? ""
                                             })
                                         }).then(res => res.json()).then(json => {
                                             const filesIds = (json as IdPlusUrl[]).map(x => x.id);
@@ -208,7 +208,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                                     }),
                                                     headers: new Headers({
                                                         'Authorization': localStorage.getItem('token') ?? "",
-                                                        'School': localStorage.getItem('schoolId') ?? "",
+                                                        'School': localStorage.getItem('school') ?? "",
                                                         'Content-Type': 'application/json'
                                                     })
                                                 })
@@ -237,7 +237,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                             }),
                                             headers: new Headers({
                                                 'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? "",
+                                                'School': localStorage.getItem('school') ?? "",
                                                 'Content-Type': 'application/json'
                                             })
                                         })
@@ -363,7 +363,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'Content-Type': 'application/json'
                                         })
                                     })
@@ -391,7 +391,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                         }),
                                         headers: new Headers({
                                             'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('schoolId') ?? "",
+                                            'School': localStorage.getItem('school') ?? "",
                                             'Content-Type': 'application/json'
                                         })
                                     })

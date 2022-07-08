@@ -37,7 +37,7 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                 thingy.push({ key: 'selectors', text: t('Selectors'), itemType: DropdownMenuItemType.Header });
                 thingy.push({ key: 'all', text: t('All') });
                 thingy.push({ key: 'studentsHeader', text: t('Students'), itemType: DropdownMenuItemType.Header });
-                thingy = thingy.concat(props.info.avaliable.filter((x: SimpleUser) => !x.teacher && !x.child).map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                thingy = thingy.concat(props.info.avaliable.filter((x: SimpleUser) => !x.teacher && x.children.length < 1).map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
                 return thingy;
             });
         }
@@ -167,7 +167,7 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                                     body: form,
                                     headers: new Headers({
                                         'Authorization': localStorage.getItem('token') ?? "",
-                                        'School': localStorage.getItem('schoolId') ?? ""
+                                        'School': localStorage.getItem('school') ?? ""
                                     })
                                 }).then(res => res.json()).then(json => {
                                     if (!json?.error) {
@@ -184,7 +184,7 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                                             }),
                                             headers: new Headers({
                                                 'Authorization': localStorage.getItem('token') ?? "",
-                                                'School': localStorage.getItem('schoolId') ?? "",
+                                                'School': localStorage.getItem('school') ?? "",
                                                 'Content-Type': 'application/json'
                                             })
                                         })
@@ -219,7 +219,7 @@ const EditActivity = (props: { domain: string | undefined; info: User; oldActivi
                                     }),
                                     headers: new Headers({
                                         'Authorization': localStorage.getItem('token') ?? "",
-                                        'School': localStorage.getItem('schoolId') ?? "",
+                                        'School': localStorage.getItem('school') ?? "",
                                         'Content-Type': 'application/json'
                                     })
                                 })
