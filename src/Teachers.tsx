@@ -8,7 +8,7 @@ const Teachers = (props: { info: User; }) => {
     const { t } = useTranslation();
 
     const [teachers, setTeachers] = useState<SimpleUser[]>([]);
-    
+
     useEffect(() => {
         setTeachers(props.info?.avaliable.filter(x => x.type === 'Teacher').sort((a, b) => a.name.localeCompare(b.name)));
     }, [props.info]);

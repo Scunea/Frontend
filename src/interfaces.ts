@@ -68,6 +68,8 @@ export interface Grade {
 export interface User {
     id: string;
     name: string;
+    schoolName: string;
+    schoolLogo?: string;
     tfa: boolean;
     teacher: string;
     administrator: boolean;
@@ -87,6 +89,7 @@ export interface SimpleUser {
 export interface School {
     id: string;
     name: string;
+    logo: string;
 };
 
 export interface Message {

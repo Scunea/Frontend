@@ -44,6 +44,71 @@ export const App: React.FunctionComponent = () => {
   const [parentsInvites, setParentsInvites] = useState<IdPlusName[]>([]);
   const [error, setError] = useState('');
 
+  function askPermission() {
+    return new Promise(function (resolve, reject) {
+      const permissionResult = Notification.requestPermission(function (result) {
+        resolve(result);
+      });
+
+      if (permissionResult) {
+        permissionResult.then(resolve, reject);
+      }
+    }).then(function (permissionResult) {
+      if (permissionResult === 'granted') {
+        console.log('[Push Notifications] Permission granted.');
+        subscribeUserToPush();
+      } else {
+        console.warn('[Push Notifications] Permission denied.');
+      }
+    });
+  }
+
+  function subscribeUserToPush() {
+    return navigator.serviceWorker
+      .register('/service-worker.js')
+      .then(function (registration) {
+        const subscribeOptions = {
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(
+            process.env.REACT_APP_VAPID_PUBLIC_KEY ?? '',
+          ),
+        };
+
+        return registration.pushManager.subscribe(subscribeOptions);
+      })
+      .then(function (pushSubscription) {
+        fetch(domain + '/notifications', {
+          method: 'POST',
+          body: JSON.stringify(pushSubscription),
+          headers: new Headers({
+            'Authorization': localStorage.getItem('token') ?? "",
+            'School': localStorage.getItem('school') ?? "",
+            'Content-Type': 'application/json'
+          })
+        }).then(res => res.json()).then(json => {
+          if (!json?.error) {
+            console.log('[Push Notifications] Subscribed successfully.');
+          }
+        });
+        return pushSubscription;
+      });
+  }
+
+  function urlBase64ToUint8Array(base64String: string) {
+    var padding = '='.repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+
+    for (var i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
   useEffect(() => {
     setSelected(document.location.hash.split('?')[0].slice(1));
 
@@ -63,118 +128,139 @@ export const App: React.FunctionComponent = () => {
           }
         });
 
-        fetch(domain + '/pendingchildren', {
-          headers: new Headers({
-            'Authorization': localStorage.getItem('token') ?? "",
-            'School': localStorage.getItem('school') ?? ""
-          })
+      fetch(domain + '/pendingchildren', {
+        headers: new Headers({
+          'Authorization': localStorage.getItem('token') ?? "",
+          'School': localStorage.getItem('school') ?? ""
         })
-          .then(res => res.json()).then(json => {
-            if (!json?.error) {
-              setChildrenInvites(json);
-            } else {
-              setError(json.error);
-            }
-          });
+      })
+        .then(res => res.json()).then(json => {
+          if (!json?.error) {
+            setChildrenInvites(json);
+          } else {
+            setError(json.error);
+          }
+        });
 
-          fetch(domain + '/pendingparents', {
-            headers: new Headers({
-              'Authorization': localStorage.getItem('token') ?? "",
-              'School': localStorage.getItem('school') ?? ""
-            })
-          })
-            .then(res => res.json()).then(json => {
-              if (!json?.error) {
-                setParentsInvites(json);
-              } else {
-                setError(json.error);
-              }
-            });
+      fetch(domain + '/pendingparents', {
+        headers: new Headers({
+          'Authorization': localStorage.getItem('token') ?? "",
+          'School': localStorage.getItem('school') ?? ""
+        })
+      })
+        .then(res => res.json()).then(json => {
+          if (!json?.error) {
+            setParentsInvites(json);
+          } else {
+            setError(json.error);
+          }
+        });
     }
 
   }, []);
 
   useEffect(() => {
     if (ws) {
-      ws.onmessage = (message: MessageEvent) => {
-        if(message.data === 'Ping!') {
+      ws.addEventListener('message', (message: MessageEvent) => {
+        if (message.data === 'Ping!') {
           ws.send('Pong!');
         } else {
-        const data = JSON.parse(message.data);
-        if (data.event === 'newUser') {
-          setUserInfo(userInfo => {
-            if (userInfo) {
-              let newUserInfo = { ...userInfo };
-              newUserInfo.avaliable.push({
-                id: data.user.id,
-                name: data.user.name,
-                teacher: data.user.subject,
-                children: data.user.children,
-                type: data.user.type.split('').map((x: string, i: number) => i === 0 ? x.toUpperCase() : x).join('')
-              });
-              return newUserInfo;
-            } else {
-              return userInfo;
-            }
-          })
-        } else if (data.event === 'editedUser') {
-          setUserInfo(userInfo => {
-            if (userInfo) {
-              let newUserInfo = { ...userInfo };
-              const index = newUserInfo.avaliable.findIndex(x => x.id === data.user.id);
-              newUserInfo.avaliable[index].name = data.user.name;
-              newUserInfo.avaliable[index].teacher = data.user.subject;
-              return newUserInfo;
-            } else {
-              return userInfo;
-            }
-          })
-        } else if (data.event === 'deletedUser') {
-          setUserInfo(userInfo => {
-            if (userInfo) {
-              let newUserInfo = { ...userInfo };
-              const index = newUserInfo.avaliable.findIndex(x => x.id === data.userId);
-              if (index > -1) {
-                newUserInfo.avaliable.splice(index, 1);
+          const data = JSON.parse(message.data);
+          if (data.event === 'editedSchool') {
+            setUserInfo(userInfo => {
+              if (userInfo) {
+                let newUserInfo = { ...userInfo };
+                newUserInfo.schoolName = data.name;
+                newUserInfo.schoolLogo = data.logo;
+                return newUserInfo;
+              } else {
+                return userInfo;
               }
-              return newUserInfo;
-            } else {
-              return userInfo;
-            }
-          })
-        } else if(data.event === 'parentInvited') {
-          setParentsInvites(parents => {
-            let newParents = [...parents];
-            newParents.push(data.parent);
-            return newParents;
-          });
-        } else if(data.event === 'childrenInvited') {
-          setChildrenInvites(children => {
-            let newChildren = [...children];
-            newChildren.push(data.children);
-            return newChildren;
-          });
-        } else if(data.event === 'parentInviteRemoved') {
-          setParentsInvites(parents => {
-            let newParents = [...parents];
-            const index = newParents.findIndex(x => x?.id === data.id);
-            if(index > -1) {
-            newParents.splice(data.id, 1);
-            }
-            return newParents;
-          });
-        } else if(data.event === 'childrenInviteRemoved') {
-          setChildrenInvites(children => {
-            let newChildren = [...children];
-            const index = newChildren.findIndex(x => x?.id === data.id);
-            if(index > -1) {
-            newChildren.splice(data.id, 1);
-            }
-            return newChildren;
-          });
+            })
+          } else if (data.event === 'newGrades') {
+            setUserInfo(userInfo => {
+              if (userInfo) {
+                let newUserInfo = { ...userInfo };
+                newUserInfo.grades = data.grades;
+                return newUserInfo;
+              } else {
+                return userInfo;
+              }
+            })
+          } else if (data.event === 'newUser') {
+            setUserInfo(userInfo => {
+              if (userInfo) {
+                let newUserInfo = { ...userInfo };
+                newUserInfo.avaliable.push({
+                  id: data.user.id,
+                  name: data.user.name,
+                  teacher: data.user.subject,
+                  children: data.user.children,
+                  type: data.user.type.split('').map((x: string, i: number) => i === 0 ? x.toUpperCase() : x).join('')
+                });
+                return newUserInfo;
+              } else {
+                return userInfo;
+              }
+            })
+          } else if (data.event === 'editedUser') {
+            setUserInfo(userInfo => {
+              if (userInfo) {
+                let newUserInfo = { ...userInfo };
+                const index = newUserInfo.avaliable.findIndex(x => x.id === data.user.id);
+                newUserInfo.avaliable[index].name = data.user.name;
+                newUserInfo.avaliable[index].teacher = data.user.subject;
+                return newUserInfo;
+              } else {
+                return userInfo;
+              }
+            })
+          } else if (data.event === 'deletedUser') {
+            setUserInfo(userInfo => {
+              if (userInfo) {
+                let newUserInfo = { ...userInfo };
+                const index = newUserInfo.avaliable.findIndex(x => x.id === data.userId);
+                if (index > -1) {
+                  newUserInfo.avaliable.splice(index, 1);
+                }
+                return newUserInfo;
+              } else {
+                return userInfo;
+              }
+            })
+          } else if (data.event === 'parentInvited') {
+            setParentsInvites(parents => {
+              let newParents = [...parents];
+              newParents.push(data.parent);
+              return newParents;
+            });
+          } else if (data.event === 'childrenInvited') {
+            setChildrenInvites(children => {
+              let newChildren = [...children];
+              newChildren.push(data.children);
+              return newChildren;
+            });
+          } else if (data.event === 'parentInviteRemoved') {
+            setParentsInvites(parents => {
+              let newParents = [...parents];
+              const index = newParents.findIndex(x => x?.id === data.id);
+              if (index > -1) {
+                newParents.splice(data.id, 1);
+              }
+              return newParents;
+            });
+          } else if (data.event === 'childrenInviteRemoved') {
+            setChildrenInvites(children => {
+              let newChildren = [...children];
+              const index = newChildren.findIndex(x => x?.id === data.id);
+              if (index > -1) {
+                newChildren.splice(data.id, 1);
+              }
+              return newChildren;
+            });
+          }
         }
-      }
-      }
+      });
     }
   }, [ws]);
 
@@ -189,7 +275,7 @@ export const App: React.FunctionComponent = () => {
   }, [language]);
 
   useEffect(() => {
-    if(setupTfa) {
+    if (setupTfa) {
       fetch(domain + '/otp', {
         method: 'POST',
         headers: new Headers({
@@ -208,11 +294,11 @@ export const App: React.FunctionComponent = () => {
     const ws = new WebSocket('ws://' + domain?.split('://')[1] + '/socket?token=' + encodeURIComponent(token) + '&school=' + encodeURIComponent(school));
 
     ws.onopen = () => {
-      console.info('[WebSocket] Connected');
+      console.info('[WebSocket] Connected.');
     };
 
     ws.onclose = () => {
-      console.warn('[WebSocket] Disconnected');
+      console.warn('[WebSocket] Disconnected.');
       setWebsocketLost(true);
     }
 
@@ -265,7 +351,7 @@ export const App: React.FunctionComponent = () => {
                 <Stack tokens={{
                   childrenGap: 25
                 }}>
-                   <Stack.Item>
+                  <Stack.Item>
                     <TextField placeholder={t('Name')} value={name} underlined onChange={(event, value) => setName(value ?? '')}></TextField>
                   </Stack.Item>
                   <Stack.Item>
@@ -478,165 +564,165 @@ export const App: React.FunctionComponent = () => {
             </Stack>
           </Modal>
           <Modal isOpen={parents} onDismiss={toggleParents}>
-                    <Stack>
-                        <div style={{
-                            borderTop: `4px solid ${getTheme().palette.themePrimary}`
-                        }}></div>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Invite your parents')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 25
-                            }}>
-                                <Stack.Item>
-                                    <TextField placeholder="Email" value={email} underlined onChange={(event, value) => setEmail(value ?? '')}></TextField>
-                                </Stack.Item>
-                            </Stack>
-                            <div style={{
-                                margin: '16px 0px 0px',
-                                textAlign: 'right',
-                                marginRight: '-4px'
-                            }}>
-                                <PrimaryButton disabled={!email} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} onClick={() => {
-                                    fetch(domain + '/parents', {
-                                        method: 'PUT',
-                                        body: JSON.stringify({
-                                            email: email
-                                        }),
-                                        headers: new Headers({
-                                            'Authorization': localStorage.getItem('token') ?? "",
-                                            'School': localStorage.getItem('school') ?? "",
-                                            'Content-Type': 'application/json'
-                                        })
-                                    }).then(res => res.json()).then(json => {
-                                        if (!json?.error) {
-                                            toggleParents();
-                                            setEmail('');
-                                        } else {
-                                            setError(json.error);
-                                        }
-                                    });
-                                }} text={t('Invite')} />
-                            </div>
-                        </Stack.Item>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Accept an invite')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 10
-                            }}>
-                                {childrenInvites.length > 0 ? childrenInvites.map(student => <DefaultButton key={student.id} styles={{
-                        root: {
-                            minHeight: 75,
-                            display: 'flex'
-                        }
-                    }} onClick={() => {
-                      fetch(domain + '/accept/' + student.id, {
-                        method: 'POST',
-                        headers: new Headers({
-                            'Authorization': localStorage.getItem('token') ?? "",
-                            'School': localStorage.getItem('school') ?? ""
-                        })
+            <Stack>
+              <div style={{
+                borderTop: `4px solid ${getTheme().palette.themePrimary}`
+              }}></div>
+              <Text variant={'xLarge'} styles={{
+                root: {
+                  color: getTheme().palette.themePrimary,
+                  padding: '16px 46px 20px 24px'
+                }
+              }}>{t('Invite your parents')}</Text>
+              <Stack.Item styles={{
+                root: {
+                  padding: '0px 24px 24px'
+                }
+              }}>
+                <Stack tokens={{
+                  childrenGap: 25
+                }}>
+                  <Stack.Item>
+                    <TextField placeholder="Email" value={email} underlined onChange={(event, value) => setEmail(value ?? '')}></TextField>
+                  </Stack.Item>
+                </Stack>
+                <div style={{
+                  margin: '16px 0px 0px',
+                  textAlign: 'right',
+                  marginRight: '-4px'
+                }}>
+                  <PrimaryButton disabled={!email} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} onClick={() => {
+                    fetch(domain + '/parents', {
+                      method: 'PUT',
+                      body: JSON.stringify({
+                        email: email
+                      }),
+                      headers: new Headers({
+                        'Authorization': localStorage.getItem('token') ?? "",
+                        'School': localStorage.getItem('school') ?? "",
+                        'Content-Type': 'application/json'
+                      })
                     }).then(res => res.json()).then(json => {
-                        if (!json?.error) {
-                          toggleParents();
-                          setEmail('');
-                        } else {
-                            setError(json.error);
-                        }
+                      if (!json?.error) {
+                        toggleParents();
+                        setEmail('');
+                      } else {
+                        setError(json.error);
+                      }
                     });
-                    }}><Persona {...{
-                        text: student.name
-                    }} /></DefaultButton>) : <Text>{t('No invites available.')}</Text>}
-                            </Stack>
-                        </Stack.Item>
-                        <Text variant={'xLarge'} styles={{
-                            root: {
-                                color: getTheme().palette.themePrimary,
-                                padding: '16px 46px 20px 24px'
-                            }
-                        }}>{t('Your pending invites')}</Text>
-                        <Stack.Item styles={{
-                            root: {
-                                padding: '0px 24px 24px'
-                            }
-                        }}>
-                            <Stack tokens={{
-                                childrenGap: 10
-                            }}>
-                                {parentsInvites.length > 0 ? parentsInvites.map(parent => <Stack horizontal verticalAlign="center" key={parent.id}>
-                                  <Stack.Item grow>
-                                    <Persona {...{
+                  }} text={t('Invite')} />
+                </div>
+              </Stack.Item>
+              <Text variant={'xLarge'} styles={{
+                root: {
+                  color: getTheme().palette.themePrimary,
+                  padding: '16px 46px 20px 24px'
+                }
+              }}>{t('Accept an invite')}</Text>
+              <Stack.Item styles={{
+                root: {
+                  padding: '0px 24px 24px'
+                }
+              }}>
+                <Stack tokens={{
+                  childrenGap: 10
+                }}>
+                  {childrenInvites.length > 0 ? childrenInvites.map(student => <DefaultButton key={student.id} styles={{
+                    root: {
+                      minHeight: 75,
+                      display: 'flex'
+                    }
+                  }} onClick={() => {
+                    fetch(domain + '/accept/' + student.id, {
+                      method: 'POST',
+                      headers: new Headers({
+                        'Authorization': localStorage.getItem('token') ?? "",
+                        'School': localStorage.getItem('school') ?? ""
+                      })
+                    }).then(res => res.json()).then(json => {
+                      if (!json?.error) {
+                        toggleParents();
+                        setEmail('');
+                      } else {
+                        setError(json.error);
+                      }
+                    });
+                  }}><Persona {...{
+                    text: student.name
+                  }} /></DefaultButton>) : <Text>{t('No invites available.')}</Text>}
+                </Stack>
+              </Stack.Item>
+              <Text variant={'xLarge'} styles={{
+                root: {
+                  color: getTheme().palette.themePrimary,
+                  padding: '16px 46px 20px 24px'
+                }
+              }}>{t('Your pending invites')}</Text>
+              <Stack.Item styles={{
+                root: {
+                  padding: '0px 24px 24px'
+                }
+              }}>
+                <Stack tokens={{
+                  childrenGap: 10
+                }}>
+                  {parentsInvites.length > 0 ? parentsInvites.map(parent => <Stack horizontal verticalAlign="center" key={parent.id}>
+                    <Stack.Item grow>
+                      <Persona {...{
                         text: parent.name,
                         styles: {
                           root: {
                             minHeight: 75,
                             display: 'flex'
+                          }
                         }
-                        }
-                    }} />
+                      }} />
                     </Stack.Item>
                     <Stack.Item>
-                    <IconButton iconProps={{ iconName: 'ChromeClose' }} onClick={() => {
-                    fetch(domain + '/parents/' + parent.id, {
-                      method: 'DELETE',
-                      headers: new Headers({
-                          'Authorization': localStorage.getItem('token') ?? "",
-                          'School': localStorage.getItem('school') ?? ""
-                      })
-                  }).then(res => res.json()).then(json => {
-                      if (!json?.error) {
-                        toggleParents();
-                        setEmail('');
-                      } else {
-                          setError(json.error);
-                      }
-                  });
-                }}></IconButton>
+                      <IconButton iconProps={{ iconName: 'ChromeClose' }} onClick={() => {
+                        fetch(domain + '/parents/' + parent.id, {
+                          method: 'DELETE',
+                          headers: new Headers({
+                            'Authorization': localStorage.getItem('token') ?? "",
+                            'School': localStorage.getItem('school') ?? ""
+                          })
+                        }).then(res => res.json()).then(json => {
+                          if (!json?.error) {
+                            toggleParents();
+                            setEmail('');
+                          } else {
+                            setError(json.error);
+                          }
+                        });
+                      }}></IconButton>
                     </Stack.Item>
-                    </Stack>) : <Text>{t('You didn\'t invite anyone.')}</Text>}
-                            </Stack>
-                            {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
-                                root: {
-                                    marginTop: 24
-                                }
-                            }}>
-                                {t(error)}
-                            </MessageBar> : null}
-                            <div style={{
-                                margin: '16px 0px 0px',
-                                textAlign: 'right',
-                                marginRight: '-4px'
-                            }}>
-                            <DefaultButton onClick={toggleParents} text={t('Cancel')} styles={{
-                                    root: {
-                                        margin: '0 4px'
-                                    }
-                                }} />
-                                </div>
-                        </Stack.Item>
-                    </Stack>
-                </Modal>
+                  </Stack>) : <Text>{t('You didn\'t invite anyone.')}</Text>}
+                </Stack>
+                {error ? <MessageBar messageBarType={MessageBarType.error} onDismiss={() => setError('')} styles={{
+                  root: {
+                    marginTop: 24
+                  }
+                }}>
+                  {t(error)}
+                </MessageBar> : null}
+                <div style={{
+                  margin: '16px 0px 0px',
+                  textAlign: 'right',
+                  marginRight: '-4px'
+                }}>
+                  <DefaultButton onClick={toggleParents} text={t('Cancel')} styles={{
+                    root: {
+                      margin: '0 4px'
+                    }
+                  }} />
+                </div>
+              </Stack.Item>
+            </Stack>
+          </Modal>
           <Persona ref={personaRef} {...{
             text: userInfo?.name,
             hidePersonaDetails: true,
@@ -667,6 +753,14 @@ export const App: React.FunctionComponent = () => {
               onClick: () => {
                 setName(userInfo?.name ?? '');
                 toggleEditUser();
+              }
+            },
+            {
+              key: 'enableNotifications',
+              iconProps: { iconName: 'Ringer' },
+              text: t('Enable notifications'),
+              onClick: () => {
+                askPermission();
               }
             },
             {
@@ -751,13 +845,13 @@ export const App: React.FunctionComponent = () => {
                           <Activities domain={domain} info={userInfo} ws={ws}></Activities> :
                           selected === 'administration' ?
                             <Administration domain={domain} info={userInfo} ws={ws}></Administration> :
-                            <Home></Home>) : null
+                            <Home domain={domain} info={userInfo}></Home>) : null
           }
         </Stack>
       }
       {websocketLost ? <MessageBar messageBarType={MessageBarType.warning} isMultiline={false} onDismiss={() => setWebsocketLost(false)} actions={
         <div>
-          <MessageBarButton onClick={() => window.location.reload()}>Refresh</MessageBarButton>
+          <MessageBarButton onClick={() => window.location.reload()}>{t('Refresh')}</MessageBarButton>
         </div>
       } styles={{
         root: {
@@ -772,4 +866,3 @@ export const App: React.FunctionComponent = () => {
     </Stack>)
   );
 };
-

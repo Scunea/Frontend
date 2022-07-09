@@ -1,8 +1,9 @@
 import React from 'react';
-import { Stack, Text } from '@fluentui/react';
+import { Persona, PersonaSize, Stack, Text } from '@fluentui/react';
 import { useTranslation } from 'react-i18next';
+import { User } from './interfaces';
 
-const Home = () => {
+const Home = (props: { domain: string | undefined; info: User; }) => {
     const { t } = useTranslation();
 
     return (
@@ -19,8 +20,19 @@ const Home = () => {
                     }
                 }}>{t('Welcome to Scunea!')}</Text>
             </Stack.Item>
-            <Stack.Item>
+            <Stack.Item styles={{
+                root: {
+                    marginBottom: 25
+                }
+            }}>
                 <Text variant='large'>{t('Start by choosing an option from the menu at the left.')}</Text>
+            </Stack.Item>
+            <Stack.Item>
+                <Persona {...{
+                    text: props.info?.schoolName,
+                    size: PersonaSize.size100,
+                    imageUrl: props.info?.schoolLogo ? props.domain + '/static/' + props.info?.schoolLogo : undefined
+                }} />
             </Stack.Item>
         </Stack>
     );

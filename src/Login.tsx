@@ -71,7 +71,7 @@ const Login = (props: { domain: string | undefined; }) => {
             <Stack.Item>
                 {token || showOtp ? <IconButton iconProps={{ iconName: 'Back' }} onClick={() => {
                     setError('');
-                    if(showOtp) {
+                    if (showOtp) {
                         setShowOtp(false);
                     } else if (createSchool) {
                         setCreateSchool(false);
@@ -164,7 +164,7 @@ const Login = (props: { domain: string | undefined; }) => {
                     }}>{!signUp ? t('Sign up') : t('Sign in')}</Link>
                 </Stack.Item>
                 <Stack.Item>
-                    {!signUp ? <PrimaryButton disabled={!(email && password && (!showOtp || otp ))} text={t('Next')} styles={{
+                    {!signUp ? <PrimaryButton disabled={!(email && password && (!showOtp || otp))} text={t('Next')} styles={{
                         root: {
                             position: 'absolute',
                             right: 25,
@@ -190,7 +190,7 @@ const Login = (props: { domain: string | undefined; }) => {
                         })
                             .then(res => res.json()).then(json => {
                                 if (!json?.error) {
-                                    if(!json?.missingOtp) {
+                                    if (!json?.missingOtp) {
                                         localStorage.setItem('token', json.token);
                                         setToken(json.token);
                                         setSchools(json.schools);
@@ -307,7 +307,8 @@ const Login = (props: { domain: string | undefined; }) => {
                     }
                 });
             }}><Persona {...{
-                text: school.name
+                text: school.name,
+                imageUrl: school?.logo ? props.domain + '/static/' + school?.logo : undefined
             }} /></DefaultButton>) : <Text styles={{
                 root: {
                     marginLeft: 50,
@@ -326,7 +327,8 @@ const Login = (props: { domain: string | undefined; }) => {
                     localStorage.setItem('school', school.id);
                     window.location.reload();
                 }}><Persona {...{
-                    text: school.name
+                    text: school.name,
+                    imageUrl: school?.logo ? props.domain + '/static/' + school?.logo : undefined
                 }} /></DefaultButton>)}
                 <DefaultButton styles={{
                     root: {

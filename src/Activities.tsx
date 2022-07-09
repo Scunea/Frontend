@@ -55,65 +55,65 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
         }
 
         if (props.ws) {
-            props.ws.onmessage = (message: MessageEvent) => {
-                if(message.data !== 'Ping!') {
-                const data = JSON.parse(message.data);
-                if (data.event === 'newActivity') {
-                    setActivities(activities => {
-                        let newActivities = [data, ...activities];
-                        setActivitiesLoaded(newActivities.slice(0, 20));
-                        return newActivities;
-                    });
-                    setTitlesFuzzySet(titlesFuzzySet => {
-                        titlesFuzzySet.add(data.title);
-                        return titlesFuzzySet;
-                    });
-                } else if (data.event === 'editedActivity') {
-                    setActivities(activities => {
-                        let newActivities = [...activities];
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].title = data.newActivity.title;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].description = data.newActivity.description;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].title = data.newActivity.title;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].type = data.newActivity.type;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].delivery = data.newActivity.delivery;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].expiration = data.newActivity.expiration;
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].receiver = data.newActivity.receiver;
+            props.ws.addEventListener('message', (message: MessageEvent) => {
+                if (message.data !== 'Ping!') {
+                    const data = JSON.parse(message.data);
+                    if (data.event === 'newActivity') {
+                        setActivities(activities => {
+                            let newActivities = [data, ...activities];
+                            setActivitiesLoaded(newActivities.slice(0, 20));
+                            return newActivities;
+                        });
+                        setTitlesFuzzySet(titlesFuzzySet => {
+                            titlesFuzzySet.add(data.title);
+                            return titlesFuzzySet;
+                        });
+                    } else if (data.event === 'editedActivity') {
+                        setActivities(activities => {
+                            let newActivities = [...activities];
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].title = data.newActivity.title;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].description = data.newActivity.description;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].title = data.newActivity.title;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].type = data.newActivity.type;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].delivery = data.newActivity.delivery;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].expiration = data.newActivity.expiration;
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].receiver = data.newActivity.receiver;
 
-                        setActivitiesLoaded(newActivities.slice(0, 20));
-                        return newActivities;
-                    });
-                    setTitlesFuzzySet(titlesFuzzySet => {
-                        titlesFuzzySet.add(data.newActivity.title);
-                        return titlesFuzzySet;
-                    });
-                } else if (data.event === 'deletedActivity') {
-                    setActivities(activities => {
-                        let newActivities = [...activities];
-                        newActivities.splice(newActivities.findIndex(x => x.id === data.id), 1);
-                        setActivitiesLoaded(newActivities.slice(0, 20));
-                        return newActivities;
-                    });
-                } else if (data.event === 'viewedActivity') {
+                            setActivitiesLoaded(newActivities.slice(0, 20));
+                            return newActivities;
+                        });
+                        setTitlesFuzzySet(titlesFuzzySet => {
+                            titlesFuzzySet.add(data.newActivity.title);
+                            return titlesFuzzySet;
+                        });
+                    } else if (data.event === 'deletedActivity') {
+                        setActivities(activities => {
+                            let newActivities = [...activities];
+                            newActivities.splice(newActivities.findIndex(x => x.id === data.id), 1);
+                            setActivitiesLoaded(newActivities.slice(0, 20));
+                            return newActivities;
+                        });
+                    } else if (data.event === 'viewedActivity') {
 
-                } else if (data.event === 'deliveredActivity') {
-                    setActivities(activities => {
-                        let newActivities = [...activities];
-                        (newActivities[newActivities.findIndex(x => x.id === data.id)].viewed as any)[data.user] = true;
-                        (newActivities[newActivities.findIndex(x => x.id === data.id)].delivered as any)[data.user] = data.delivery;
-                        (newActivities[newActivities.findIndex(x => x.id === data.id)].result as any)[data.user] = 'Unchecked';
+                    } else if (data.event === 'deliveredActivity') {
+                        setActivities(activities => {
+                            let newActivities = [...activities];
+                            (newActivities[newActivities.findIndex(x => x.id === data.id)].viewed as any)[data.user] = true;
+                            (newActivities[newActivities.findIndex(x => x.id === data.id)].delivered as any)[data.user] = data.delivery;
+                            (newActivities[newActivities.findIndex(x => x.id === data.id)].result as any)[data.user] = 'Unchecked';
 
-                        return newActivities;
-                    });
-                } else if (data.event === 'resultActivity') {
-                    setActivities(activities => {
-                        let newActivities = [...activities];
-                        newActivities[newActivities.findIndex(x => x.id === data.id)].result = data.result;
+                            return newActivities;
+                        });
+                    } else if (data.event === 'resultActivity') {
+                        setActivities(activities => {
+                            let newActivities = [...activities];
+                            newActivities[newActivities.findIndex(x => x.id === data.id)].result = data.result;
 
-                        return newActivities;
-                    });
+                            return newActivities;
+                        });
+                    }
                 }
-            }
-            };
+            });
         }
 
     }, []);

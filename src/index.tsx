@@ -23,6 +23,62 @@ mergeStyles({
   },
 });
 
+navigator.serviceWorker
+  .register('/service-worker.js')
+  .then(function (registration) {
+    console.log('[Service Worker] Registered successfully.');
+    subscribeUserToPush(process.env.REACT_APP_DOMAIN ?? '');
+    return registration;
+  })
+  .catch(function (err) {
+    console.error('[Service Worker] Unable to register.', err);
+  });
+
+function subscribeUserToPush(domain: string) {
+  return navigator.serviceWorker
+    .register('/service-worker.js')
+    .then(function (registration) {
+      const subscribeOptions = {
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(
+          process.env.REACT_APP_VAPID_PUBLIC_KEY ?? '',
+        ),
+      };
+
+      return registration.pushManager.subscribe(subscribeOptions);
+    })
+    .then(function (pushSubscription) {
+      fetch(domain + '/notifications', {
+        method: 'POST',
+        body: JSON.stringify(pushSubscription),
+        headers: new Headers({
+          'Authorization': localStorage.getItem('token') ?? "",
+          'School': localStorage.getItem('school') ?? "",
+          'Content-Type': 'application/json'
+        })
+      }).then(res => res.json()).then(json => {
+        if (!json?.error) {
+          console.log('[Push Notifications] Subscribed successfully.');
+        }
+      });
+      return pushSubscription;
+    });
+}
+
+function urlBase64ToUint8Array(base64String: string) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
 
 createRoot(document.getElementById('root')!).render(<App />);
 

@@ -33,14 +33,14 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
         }
 
         if (props.ws) {
-            props.ws.onmessage = (message: MessageEvent) => {
-                if(message.data !== 'Ping!') {
-                const data = JSON.parse(message.data);
-                if (data.event === 'newGrades') {
-                    setData(data.grades);
+            props.ws.addEventListener('message', (message: MessageEvent) => {
+                if (message.data !== 'Ping!') {
+                    const data = JSON.parse(message.data);
+                    if (data.event === 'newGrades') {
+                        setData(data.grades);
+                    }
                 }
-            }
-            }
+            });
         }
 
     }, []);
@@ -90,10 +90,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 addRowsComponent={() => {
                     return <></>;
                 }}
-                contextMenuComponent={(props) => {
-                    props.close();
-                    return <></>;
-                }}
+                disableContextMenu
                 onChange={(value) => setData(value as Grade[])}
                 columns={[
                     {
@@ -174,10 +171,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 addRowsComponent={() => {
                     return <></>;
                 }}
-                contextMenuComponent={(props) => {
-                    props.close();
-                    return <></>;
-                }}
+                disableContextMenu
                 columns={[
                     {
                         ...keyColumn('subject', textColumn),
@@ -240,7 +234,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     text: x.name
                 }}></Persona>
             </DefaultButton>)}
-        </Stack> : !props.info?.children ? <Stack styles={{
+        </Stack> : props.info?.children.length < 1 ? <Stack styles={{
             root: {
                 padding: 25
             }
@@ -261,10 +255,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 addRowsComponent={() => {
                     return <></>;
                 }}
-                contextMenuComponent={(props) => {
-                    props.close();
-                    return <></>;
-                }}
+                disableContextMenu
                 columns={[
                     {
                         ...keyColumn('subject', textColumn),
@@ -319,10 +310,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 addRowsComponent={() => {
                     return <></>;
                 }}
-                contextMenuComponent={(props) => {
-                    props.close();
-                    return <></>;
-                }}
+                disableContextMenu
                 columns={[
                     {
                         ...keyColumn('id', textColumn),
