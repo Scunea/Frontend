@@ -95,6 +95,8 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 columns={[
                     {
                         ...keyColumn('id', textColumn),
+                        headerClassName: 'invisible',
+                        cellClassName: 'invisible',
                         disabled: true,
                         title: t('ID'),
                     },
@@ -155,7 +157,6 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 }}></IconButton>
             </Stack.Item>
             <Text variant="xxLarge">{t('Somebody\'s grades', { user: selectedUser.name })}</Text>
-            <Text>{t('Note: This data isn\'t updated automatically to prevent data loss.')}</Text>
             <Stack.Item styles={{
                 root: {
                     marginTop: '25px !important'
@@ -220,8 +221,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     {t(error)}
                 </MessageBar> : null}
             </Stack.Item>
-            {props.info?.avaliable.filter(x => x.type === 'Student').length < 1 ? <Text>{t('No students!')}</Text> : null}
-            {props.info?.avaliable.filter(x => x.type === 'Student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
+            {props.info?.avaliable.filter(x => x.type === 'Student').length > 0 ? props.info?.avaliable.filter(x => x.type === 'Student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
                 root: {
                     display: 'flex',
                     minHeight: 75,
@@ -233,7 +233,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 <Persona {...{
                     text: x.name
                 }}></Persona>
-            </DefaultButton>)}
+            </DefaultButton>) : <Text>{t('No students!')}</Text>}
         </Stack> : props.info?.children.length < 1 ? <Stack styles={{
             root: {
                 padding: 25
@@ -314,6 +314,8 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                 columns={[
                     {
                         ...keyColumn('id', textColumn),
+                        headerClassName: 'invisible',
+                        cellClassName: 'invisible',
                         disabled: true,
                         title: t('ID'),
                     },

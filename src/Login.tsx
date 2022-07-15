@@ -3,6 +3,7 @@ import { Stack, Image, Text, TextField, PrimaryButton, Persona, DefaultButton, I
 import logo from './Logo.svg';
 import { School } from './interfaces';
 import { useTranslation } from 'react-i18next';
+import { setegid } from 'process';
 
 const Login = (props: { domain: string | undefined; }) => {
 
@@ -192,6 +193,10 @@ const Login = (props: { domain: string | undefined; }) => {
                                 if (!json?.error) {
                                     if (!json?.missingOtp) {
                                         localStorage.setItem('token', json.token);
+                                        setName('');
+                                        setEmail('');
+                                        setPassword('');
+                                        setOtp('');
                                         setToken(json.token);
                                         setSchools(json.schools);
                                         setPending(json.pendingschools);
@@ -264,6 +269,7 @@ const Login = (props: { domain: string | undefined; }) => {
                             bottom: 25
                         },
                     }} onClick={() => {
+                        setError('');
                         fetch(props.domain + '/create', {
                             method: 'POST',
                             body: JSON.stringify({
@@ -284,7 +290,7 @@ const Login = (props: { domain: string | undefined; }) => {
                         });
                     }} />
                 </Stack.Item>
-            </> : invites ? pending.length > 0 ? pending.map(school => school && <DefaultButton key={school.id} styles={{
+            </> : invites ? pending.length > 0 ? pending.map(school => <DefaultButton key={school.id} styles={{
                 root: {
                     marginLeft: 50,
                     marginRight: 50,
@@ -315,7 +321,7 @@ const Login = (props: { domain: string | undefined; }) => {
                     marginRight: 50
                 }
             }}>{t('No invites available.')}</Text> : <>
-                {schools.map(school => school && <DefaultButton key={school.id} styles={{
+                {schools.map(school => <DefaultButton key={school.id} styles={{
                     root: {
                         marginLeft: 50,
                         marginRight: 50,

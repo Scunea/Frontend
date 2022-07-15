@@ -52,6 +52,40 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                     }
                 });
         }
+
+        if (props.ws) {
+            props.ws.addEventListener('message', (message: MessageEvent) => {
+                if (message.data !== 'Ping!') {
+                    const data = JSON.parse(message.data);
+                    if (data.event === 'newReport') {
+                        setReports(reports => {
+                            let newReports = [data, ...reports];
+                            return newReports;
+                        });
+                        setTitlesFuzzySet(titlesFuzzySet => {
+                            titlesFuzzySet.add(data.title);
+                            return titlesFuzzySet;
+                        });
+                    } else if (data.event === 'editedReport') {
+                        setReports(reports => {
+                            let newReports = [...reports];
+                            newReports[newReports.findIndex(x => x.id === data.id)].title = data.newTitle;
+                            return newReports;
+                        });
+                        setTitlesFuzzySet(titlesFuzzySet => {
+                            titlesFuzzySet.add(data.newTitle);
+                            return titlesFuzzySet;
+                        });
+                    } else if (data.event === 'deletedReport') {
+                        setReports(reports => {
+                            let newReports = [...reports];
+                            newReports.splice(newReports.findIndex(x => x.id === data.id), 1);
+                            return newReports;
+                        });
+                    }
+                }
+            });
+        }
     }, []);
 
     useEffect(() => {

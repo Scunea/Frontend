@@ -1,7 +1,7 @@
 self.addEventListener('push', event => {
     if (event.data) {
         const data = JSON.parse(event.data?.text());
-        self.registration.showNotification('newMessage' ? 'New message!' : data?.event === 'newActivity' ? 'New activity!' : data?.event === 'newReport' ? 'New report!' : 'newGrades' ? 'New grades!' : '', {
+        self.registration.showNotification('newMessage' ? 'New message!' : data?.event === 'newActivity' ? 'New activity!' : data?.event === 'newReport' ? 'New report!' : data?.event === 'newGrades' ? 'New grades!' : '', {
             icon: '/icon192.png',
             body: data?.title,
             tag: data?.event

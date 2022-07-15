@@ -102,7 +102,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                     root: {
                         color: NeutralColors.gray130
                     }
-                }}>{new Date(props.selectedActivity.date).toDateString()} - {props.selectedActivity.expiration ? (new Date(props.selectedActivity.expiration).toDateString()) : t('No expiration')}</Text>
+                }}>{new Date(props.selectedActivity.date).toString()} - {props.selectedActivity.expiration ? (new Date(props.selectedActivity.expiration).toString()) : t('No expiration')}</Text>
             </Stack.Item>
             <Stack.Item>
                 <Text variant="large">{props.selectedActivity?.title}</Text>
@@ -411,7 +411,7 @@ const ReadActivity = (props: { domain: string | undefined; activities: Activity[
                                 }} />
                             </Stack.Item>
                         </Stack>
-                        <DocumentCardActivity activity={new Date(thingy.date).toDateString()} people={[
+                        <DocumentCardActivity activity={new Date(thingy.date).toString()} people={[
                             { name: thingy.name, profileImageSrc: '' }
                         ]} />
                     </DocumentCard></Stack.Item>

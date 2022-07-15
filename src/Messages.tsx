@@ -225,7 +225,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                                         root: {
                                             position: 'absolute'
                                         }
-                                    } : {}}>{t('From somebody to somebody', { from: message.author.name, to: message.receiver.map(x => x.name).join(', ') })}</Text>
+                                    } : {}}>{message.receiver ? t('From somebody to somebody', { from: message.author.name, to: message.receiver.map(x => x.name).join(', ') }) : t('From somebody', { from: message.author.name })}</Text>
                                 </Stack.Item>
                                 {message.files.length > 0 ? <Stack.Item styles={{
                                     root: {
@@ -239,7 +239,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                                         root: {
                                             color: NeutralColors.gray130
                                         }
-                                    }}>{new Date(message.date).toDateString()}</Text>
+                                    }}>{new Date(message.date).toString()}</Text>
                                 </Stack.Item>
                                 <Stack.Item styles={{
                                     root: {
@@ -263,7 +263,7 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                                             height: '100%'
                                         }
                                     }}>
-                                        {!message.pdf ? new DOMParser().parseFromString(message.content, 'text/html').body.textContent : t('Preview not available.')}
+                                        {message.preview ?? t('Preview not available.')}
                                     </Text>
                                 </Stack.Item>
                             </Stack>

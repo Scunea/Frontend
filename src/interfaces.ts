@@ -96,6 +96,7 @@ export interface Message {
     id: string;
     title: string;
     content: string;
+    preview?: string;
     pdf?: string;
     files: IdPlusName[];
     author: IdPlusName;

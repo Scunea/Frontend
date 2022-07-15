@@ -302,7 +302,7 @@ const Activities = (props: { domain: string | undefined; info: User; ws: WebSock
                                 }
                             }}>
                                 <Stack.Item>
-                                    <Text>{new Date(activity.date).toDateString()} - {activity.expiration ? (new Date(activity.expiration).toDateString()) : t('No expiration')}</Text>
+                                    <Text>{new Date(activity.date).toString()} - {activity.expiration ? (new Date(activity.expiration).toString()) : t('No expiration')}</Text>
                                 </Stack.Item>
                                 <Stack.Item>
                                     <Text variant="large">{activity.title}</Text>

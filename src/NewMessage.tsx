@@ -24,31 +24,60 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
     useEffect(() => {
         if (props.info) {
             setReceivers(() => {
+                const administrators = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator');
+                const teachers = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher');
+                const students = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student');
+                const parents = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent');
+
                 let thingy: IDropdownOption[] = [];
                 thingy.push({ key: 'selectors', text: t('Selectors'), itemType: DropdownMenuItemType.Header });
                 thingy.push({ key: 'all', text: t('All') });
                 if (props.info?.teacher || props.info?.administrator) {
-                    thingy.push({ key: 'allAdministrators', text: t('All administrators') });
-                    thingy.push({ key: 'allTeachers', text: t('All teachers') });
-                    thingy.push({ key: 'allStudents', text: t('All students') });
-                    thingy.push({ key: 'allParents', text: t('All parents') });
+                    if(administrators?.length > 0) {
+                        thingy.push({ key: 'allAdministrators', text: t('All administrators') });
+                    }
+                    if(teachers?.length > 0) {
+                        thingy.push({ key: 'allTeachers', text: t('All teachers') });
+                    }
+                    if(students?.length > 0) {
+                        thingy.push({ key: 'allStudents', text: t('All students') });
+                    }
+                    if(parents?.length > 0) {
+                        thingy.push({ key: 'allParents', text: t('All parents') });
+                    }
                     thingy.push({ key: 'divider', text: '-', itemType: DropdownMenuItemType.Divider });
-                    thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
-                    thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
-                    thingy.push({ key: 'studentsHeader', text: t('Students'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
-                    thingy.push({ key: 'parentsHeader', text: t('Parents'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    if(administrators?.length > 0) {
+                        thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(administrators?.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
+                    if(teachers?.length > 0) {
+                        thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(teachers?.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
+                    if(students?.length > 0) {
+                        thingy.push({ key: 'studentsHeader', text: t('Students'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(students.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
+                    if(parents?.length > 0) {
+                        thingy.push({ key: 'parentsHeader', text: t('Parents'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(parents.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
                 } else {
-                    thingy.push({ key: 'allAdministrators', text: t('All administrators') });
-                    thingy.push({ key: 'allTeachers', text: t('All teachers') });
+                    if(administrators?.length > 0) {
+                        thingy.push({ key: 'allAdministrators', text: t('All administrators') });
+                    }
+                    if(teachers?.length > 0) {
+                        thingy.push({ key: 'allTeachers', text: t('All teachers') });
+                    }
                     thingy.push({ key: 'divider', text: '-', itemType: DropdownMenuItemType.Divider });
-                    thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
-                    thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
-                    thingy = thingy.concat(props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    if(administrators?.length > 0) {
+                        thingy.push({ key: 'administratorsHeader', text: t('Administrators'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(administrators?.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
+                    if(teachers?.length > 0) {
+                        thingy.push({ key: 'teachersHeader', text: t('Teachers'), itemType: DropdownMenuItemType.Header });
+                        thingy = thingy.concat(teachers?.map((x: SimpleUser) => { return { key: x.id, text: x.name }; }));
+                    }
                 }
                 return thingy;
             });
@@ -100,7 +129,34 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                 setReceiver([]);
                             }
                         } else if (item?.key === 'allStudents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => !x.teacher && x.children.length < 1).map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student').map((x: SimpleUser) => x.id);
+                            let found = 0;
+                            thingy.forEach((x: string) => {
+                                if (receiver.includes(x)) {
+                                    found++;
+                                }
+                            });
+                            if (found !== thingy.length) {
+                                setReceiver(Receiver => {
+                                    let newReceiver = [...Receiver];
+                                    thingy.forEach((x: string) => {
+                                        if (!newReceiver.includes(x)) {
+                                            newReceiver.push(x);
+                                        }
+                                    });
+                                    return newReceiver;
+                                });
+                            } else {
+                                setReceiver(Receiver => {
+                                    let newReceiver = [...Receiver];
+                                    thingy.forEach((x: string) => {
+                                        newReceiver.splice(newReceiver.indexOf(x), 1)
+                                    })
+                                    return newReceiver;
+                                });
+                            }
+                        } else if (item?.key === 'allAdministrators') {
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -127,7 +183,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                 });
                             }
                         } else if (item?.key === 'allParents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.children.length > 0).map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -154,7 +210,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                 });
                             }
                         } else if (item?.key === 'allTeachers') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.teacher).map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {

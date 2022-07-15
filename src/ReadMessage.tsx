@@ -81,14 +81,14 @@ const ReadMessage = (props: { domain: string | undefined; messages: Message[]; s
             }
         }}>
             <Stack.Item>
-                <Text>{t('From somebody to somebody', { from: props.selectedMessage?.author.name, to: props.selectedMessage?.receiver.map((x: IdPlusName) => x.name).join(', ') })}</Text>
+                <Text>{props.selectedMessage?.receiver ? t('From somebody to somebody', { from: props.selectedMessage?.author.name, to: props.selectedMessage?.receiver.map(x => x.name).join(', ') }) : t('From somebody', { from: props.selectedMessage?.author.name })}</Text>
             </Stack.Item>
             <Stack.Item>
                 <Text variant="smallPlus" styles={{
                     root: {
                         color: NeutralColors.gray130
                     }
-                }}>{new Date(Number(props.selectedMessage?.date)).toDateString()}</Text>
+                }}>{new Date(Number(props.selectedMessage?.date)).toString()}</Text>
             </Stack.Item>
             <Stack.Item>
                 <Text variant="large">{props.selectedMessage?.title}</Text>

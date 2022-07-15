@@ -21,6 +21,9 @@ mergeStyles({
   ':global(body):not(.loginBody)': {
     backgroundColor: NeutralColors.gray10
   },
+  ':global(.invisible)': {
+    display: 'none !important'
+  }
 });
 
 navigator.serviceWorker
