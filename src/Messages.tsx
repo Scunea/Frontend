@@ -46,7 +46,6 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
 
         if (props.ws) {
             props.ws.addEventListener('message', (message: MessageEvent) => {
-                if (message.data !== 'Ping!') {
                     const data = JSON.parse(message.data);
                     if (data.event === 'newMessage') {
                         setMessages(messages => {
@@ -61,16 +60,16 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                     } else if (data.event === 'editedMessage') {
                         setMessages(messages => {
                             let newMessages = [...messages];
-                            newMessages[newMessages.findIndex(x => x.id === data.id)].title = data.newMessage.title;
-                            newMessages[newMessages.findIndex(x => x.id === data.id)].content = data.newMessage.content;
-                            newMessages[newMessages.findIndex(x => x.id === data.id)].files = data.newMessage.files;
-                            newMessages[newMessages.findIndex(x => x.id === data.id)].receiver = data.newMessage.receiver;
+                            newMessages[newMessages.findIndex(x => x.id === data.id)].title = data.message.title;
+                            newMessages[newMessages.findIndex(x => x.id === data.id)].content = data.message.content;
+                            newMessages[newMessages.findIndex(x => x.id === data.id)].files = data.message.files;
+                            newMessages[newMessages.findIndex(x => x.id === data.id)].receiver = data.message.receiver;
 
                             setMessagesLoaded(newMessages.slice(0, 20));
                             return newMessages;
                         });
                         setTitlesFuzzySet(titlesFuzzySet => {
-                            titlesFuzzySet.add(data.newMessage.title);
+                            titlesFuzzySet.add(data.message.title);
                             return titlesFuzzySet;
                         });
                     } else if (data.event === 'deletedMessage') {
@@ -80,7 +79,6 @@ const Messages = (props: { domain: string | undefined; info: User; ws: WebSocket
                             setMessagesLoaded(newMessages.slice(0, 20));
                             return newMessages;
                         });
-                    }
                 }
             });
         }

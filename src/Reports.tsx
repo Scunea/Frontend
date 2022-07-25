@@ -55,7 +55,6 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
 
         if (props.ws) {
             props.ws.addEventListener('message', (message: MessageEvent) => {
-                if (message.data !== 'Ping!') {
                     const data = JSON.parse(message.data);
                     if (data.event === 'newReport') {
                         setReports(reports => {
@@ -83,7 +82,6 @@ const Reports = (props: { domain: string | undefined; info: User; ws: WebSocket 
                             return newReports;
                         });
                     }
-                }
             });
         }
     }, []);

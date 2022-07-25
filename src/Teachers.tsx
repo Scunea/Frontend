@@ -10,7 +10,7 @@ const Teachers = (props: { info: User; }) => {
     const [teachers, setTeachers] = useState<SimpleUser[]>([]);
 
     useEffect(() => {
-        setTeachers(props.info?.avaliable.filter(x => x.type === 'Teacher').sort((a, b) => a.name.localeCompare(b.name)));
+        setTeachers(props.info?.available.filter(x => x.type === 'teacher').sort((a, b) => a.name.localeCompare(b.name)));
     }, [props.info]);
 
     return (

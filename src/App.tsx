@@ -17,7 +17,7 @@ import { IdPlusName, OTP, User } from './interfaces';
 import './fixes.css';
 import { useTranslation } from 'react-i18next';
 
-const domain = process.env.REACT_APP_DOMAIN;
+const domain = import.meta.env.VITE_DOMAIN;
 
 export const App: React.FunctionComponent = () => {
 
@@ -70,7 +70,7 @@ export const App: React.FunctionComponent = () => {
         const subscribeOptions = {
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(
-            process.env.REACT_APP_VAPID_PUBLIC_KEY ?? '',
+            import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '',
           ),
         };
 
@@ -162,9 +162,6 @@ export const App: React.FunctionComponent = () => {
   useEffect(() => {
     if (ws) {
       ws.addEventListener('message', (message: MessageEvent) => {
-        if (message.data === 'Ping!') {
-          ws.send('Pong!');
-        } else {
           const data = JSON.parse(message.data);
           if (data.event === 'editedSchool') {
             setUserInfo(userInfo => {
@@ -191,7 +188,7 @@ export const App: React.FunctionComponent = () => {
             setUserInfo(userInfo => {
               if (userInfo) {
                 let newUserInfo = { ...userInfo };
-                newUserInfo.avaliable.push({
+                newUserInfo.available.push({
                   id: data.user.id,
                   name: data.user.name,
                   teacher: data.user.subject,
@@ -207,9 +204,9 @@ export const App: React.FunctionComponent = () => {
             setUserInfo(userInfo => {
               if (userInfo) {
                 let newUserInfo = { ...userInfo };
-                const index = newUserInfo.avaliable.findIndex(x => x.id === data.user.id);
-                newUserInfo.avaliable[index].name = data.user.name;
-                newUserInfo.avaliable[index].teacher = data.user.subject;
+                const index = newUserInfo.available.findIndex(x => x.id === data.user.id);
+                newUserInfo.available[index].name = data.user.name;
+                newUserInfo.available[index].teacher = data.user.subject;
                 return newUserInfo;
               } else {
                 return userInfo;
@@ -219,9 +216,9 @@ export const App: React.FunctionComponent = () => {
             setUserInfo(userInfo => {
               if (userInfo) {
                 let newUserInfo = { ...userInfo };
-                const index = newUserInfo.avaliable.findIndex(x => x.id === data.userId);
+                const index = newUserInfo.available.findIndex(x => x.id === data.userId);
                 if (index > -1) {
-                  newUserInfo.avaliable.splice(index, 1);
+                  newUserInfo.available.splice(index, 1);
                 }
                 return newUserInfo;
               } else {
@@ -259,7 +256,6 @@ export const App: React.FunctionComponent = () => {
               return newChildren;
             });
           }
-        }
       });
     }
   }, [ws]);
@@ -465,7 +461,7 @@ export const App: React.FunctionComponent = () => {
                       method: 'POST',
                       body: JSON.stringify({
                         password: currentPassword,
-                        otp: otp
+                        otp: otp.split(" ").join("")
                       }),
                       headers: new Headers({
                         'Authorization': localStorage.getItem('token') ?? "",
@@ -536,7 +532,7 @@ export const App: React.FunctionComponent = () => {
                       method: 'DELETE',
                       body: JSON.stringify({
                         password: currentPassword,
-                        otp: otp
+                        otp: otp.split(" ").join("")
                       }),
                       headers: new Headers({
                         'Authorization': localStorage.getItem('token') ?? "",

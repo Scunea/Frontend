@@ -65,7 +65,6 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
 
         if (props.ws) {
             props.ws.addEventListener('message', (message: MessageEvent) => {
-                if (message.data !== 'Ping!') {
                     const data = JSON.parse(message.data);
                     if (data.event === 'newUser') {
                         setPeople(people => {
@@ -110,7 +109,6 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                             return newPeople;
                         });
                     }
-                }
             });
         };
     }, []);
@@ -448,16 +446,16 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                             Name: x.name,
                             Email: x.email,
                             Subject: x.subject ?? 'N/A',
-                            Children: x.type === 'Parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
-                            Type: x.type
+                            Children: x.type === 'parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
+                            Type: x.type.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('')
                         }
                     }) : people.map(x => {
                         return {
                             Name: x.name,
                             Email: x.email,
                             Subject: x.subject ?? 'N/A',
-                            Children: x.type === 'Parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
-                            Type: x.type
+                            Children: x.type === 'parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
+                            Type: x.type.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('')
                         }
                     })).map(x => {
                         return Object.fromEntries(Object.entries(x).map(x => {

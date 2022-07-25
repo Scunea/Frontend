@@ -30,7 +30,7 @@ navigator.serviceWorker
   .register('/service-worker.js')
   .then(function (registration) {
     console.log('[Service Worker] Registered successfully.');
-    subscribeUserToPush(process.env.REACT_APP_DOMAIN ?? '');
+    subscribeUserToPush(import.meta.env.VITE_DOMAIN ?? '');
     return registration;
   })
   .catch(function (err) {
@@ -44,26 +44,28 @@ function subscribeUserToPush(domain: string) {
       const subscribeOptions = {
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
-          process.env.REACT_APP_VAPID_PUBLIC_KEY ?? '',
+          import.meta.env.VITE_VAPID_PUBLIC_KEY ?? '',
         ),
       };
 
       return registration.pushManager.subscribe(subscribeOptions);
     })
     .then(function (pushSubscription) {
-      fetch(domain + '/notifications', {
-        method: 'POST',
-        body: JSON.stringify(pushSubscription),
-        headers: new Headers({
-          'Authorization': localStorage.getItem('token') ?? "",
-          'School': localStorage.getItem('school') ?? "",
-          'Content-Type': 'application/json'
-        })
-      }).then(res => res.json()).then(json => {
-        if (!json?.error) {
-          console.log('[Push Notifications] Subscribed successfully.');
-        }
-      });
+      if (localStorage.getItem("token") && localStorage.getItem("school")) {
+        fetch(domain + '/notifications', {
+          method: 'POST',
+          body: JSON.stringify(pushSubscription),
+          headers: new Headers({
+            'Authorization': localStorage.getItem('token') ?? "",
+            'School': localStorage.getItem('school') ?? "",
+            'Content-Type': 'application/json'
+          })
+        }).then(res => res.json()).then(json => {
+          if (!json?.error) {
+            console.log('[Push Notifications] Subscribed successfully.');
+          }
+        });
+    }
       return pushSubscription;
     });
 }

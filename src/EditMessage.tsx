@@ -30,10 +30,10 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
     useEffect(() => {
         if (props.info) {
             setReceivers(() => {
-                const administrators = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator');
-                const teachers = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher');
-                const students = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student');
-                const parents = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent');
+                const administrators = props.info?.available.filter((x: SimpleUser) => x.type === 'administrator');
+                const teachers = props.info?.available.filter((x: SimpleUser) => x.type === 'teacher');
+                const students = props.info?.available.filter((x: SimpleUser) => x.type === 'student');
+                const parents = props.info?.available.filter((x: SimpleUser) => x.type === 'parent');
 
                 let thingy: IDropdownOption[] = [];
                 thingy.push({ key: 'selectors', text: t('Selectors'), itemType: DropdownMenuItemType.Header });
@@ -115,13 +115,13 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                                 item.selected ? [...receiver, item.key as string] : receiver.filter(key => key !== item.key),
                             );
                         } else if (item?.key === 'all') {
-                            if (receiver.sort().join() !== props.info.avaliable.map((x: SimpleUser) => x.id).sort().join()) {
-                                setReceiver(props.info?.avaliable.map((x: SimpleUser) => x.id));
+                            if (receiver.sort().join() !== props.info.available.map((x: SimpleUser) => x.id).sort().join()) {
+                                setReceiver(props.info?.available.map((x: SimpleUser) => x.id));
                             } else {
                                 setReceiver([]);
                             }
                         } else if (item?.key === 'allStudents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student').map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.available.filter((x: SimpleUser) => x.type === 'student').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -148,7 +148,7 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                                 });
                             }
                         } else if (item?.key === 'allAdministrators') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Administrator').map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.available.filter((x: SimpleUser) => x.type === 'administrator').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -175,7 +175,7 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                                 });
                             }
                         } else if (item?.key === 'allParents') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Parent').map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.available.filter((x: SimpleUser) => x.type === 'parent').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {
@@ -202,7 +202,7 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                                 });
                             }
                         } else if (item?.key === 'allTeachers') {
-                            const thingy = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Teacher').map((x: SimpleUser) => x.id);
+                            const thingy = props.info?.available.filter((x: SimpleUser) => x.type === 'teacher').map((x: SimpleUser) => x.id);
                             let found = 0;
                             thingy.forEach((x: string) => {
                                 if (receiver.includes(x)) {

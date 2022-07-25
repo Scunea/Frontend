@@ -34,12 +34,10 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
 
         if (props.ws) {
             props.ws.addEventListener('message', (message: MessageEvent) => {
-                if (message.data !== 'Ping!') {
                     const data = JSON.parse(message.data);
                     if (data.event === 'newGrades') {
                         setData(data.grades);
                     }
-                }
             });
         }
 
@@ -221,7 +219,7 @@ const Grades = (props: { domain: string | undefined; info: User; ws: WebSocket |
                     {t(error)}
                 </MessageBar> : null}
             </Stack.Item>
-            {props.info?.avaliable.filter(x => x.type === 'Student').length > 0 ? props.info?.avaliable.filter(x => x.type === 'Student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
+            {props.info?.available.filter(x => x.type === 'student').length > 0 ? props.info?.available.filter(x => x.type === 'student').sort((a, b) => a.name.localeCompare(b.name)).map((x, i) => <DefaultButton key={i} styles={{
                 root: {
                     display: 'flex',
                     minHeight: 75,

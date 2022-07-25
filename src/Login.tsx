@@ -32,10 +32,10 @@ const Login = (props: { domain: string | undefined; }) => {
 
     useEffect(() => {
         if (localStorage.getItem('token')) {
-            fetch(props.domain + '/loginByToken', {
+            fetch(props.domain + '/loginbytoken', {
                 method: 'POST',
                 body: JSON.stringify({
-                    token: localStorage.getItem('token')
+                    token: localStorage.getItem('token')?.replace('Bearer ', ''),
                 }),
                 headers: new Headers({
                     'Content-Type': 'application/json'
@@ -183,7 +183,7 @@ const Login = (props: { domain: string | undefined; }) => {
                             body: JSON.stringify({
                                 email: email,
                                 password: password,
-                                otp: otp
+                                otp: otp.split(" ").join("")
                             }),
                             headers: new Headers({
                                 'Content-Type': 'application/json'
@@ -192,7 +192,7 @@ const Login = (props: { domain: string | undefined; }) => {
                             .then(res => res.json()).then(json => {
                                 if (!json?.error) {
                                     if (!json?.missingOtp) {
-                                        localStorage.setItem('token', json.token);
+                                        localStorage.setItem('token', 'Bearer ' + json.token);
                                         setName('');
                                         setEmail('');
                                         setPassword('');
@@ -281,7 +281,7 @@ const Login = (props: { domain: string | undefined; }) => {
                             })
                         }).then(res => res.json()).then(json => {
                             if (!json?.error) {
-                                localStorage.setItem('token', token);
+                                localStorage.setItem('token', 'Bearer ' + token);
                                 localStorage.setItem('school', json.id);
                                 window.location.reload();
                             } else {
@@ -305,7 +305,7 @@ const Login = (props: { domain: string | undefined; }) => {
                     })
                 }).then(res => res.json()).then(json => {
                     if (!json?.error) {
-                        localStorage.setItem('token', token);
+                        localStorage.setItem('token', 'Bearer ' + token);
                         localStorage.setItem('school', school.id);
                         window.location.reload();
                     } else {
@@ -329,7 +329,7 @@ const Login = (props: { domain: string | undefined; }) => {
                         display: 'flex'
                     }
                 }} onClick={() => {
-                    localStorage.setItem('token', token);
+                    localStorage.setItem('token', 'Bearer ' + token);
                     localStorage.setItem('school', school.id);
                     window.location.reload();
                 }}><Persona {...{

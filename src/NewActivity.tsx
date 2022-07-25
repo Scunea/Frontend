@@ -23,7 +23,7 @@ const NewActivity = (props: { domain: string | undefined; info: User; newActivit
     useEffect(() => {
         if (props.info) {
             setReceivers(() => {
-                const students = props.info?.avaliable.filter((x: SimpleUser) => x.type === 'Student');
+                const students = props.info?.available.filter((x: SimpleUser) => x.type === 'student');
 
                 let thingy: IDropdownOption[] = [];
                 thingy.push({ key: 'selectors', text: t('Selectors'), itemType: DropdownMenuItemType.Header });
@@ -76,8 +76,8 @@ const NewActivity = (props: { domain: string | undefined; info: User; newActivit
                                 item.selected ? [...receiver, item.key as string] : receiver.filter(key => key !== item.key),
                             );
                         } else if (item?.key === 'all') {
-                            if (receiver.sort().join() !== props.info.avaliable.map((x: SimpleUser) => x.id).sort().join()) {
-                                setReceiver(props.info.avaliable.map((x: SimpleUser) => x.id));
+                            if (receiver.sort().join() !== props.info.available.map((x: SimpleUser) => x.id).sort().join()) {
+                                setReceiver(props.info.available.map((x: SimpleUser) => x.id));
                             } else {
                                 setReceiver([]);
                             }

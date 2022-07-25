@@ -15,6 +15,12 @@ export interface FilesPlusPlus {
     date: number;
 }
 
+export interface Event {
+    id: string;
+    activityId: string;
+    end: number;
+};
+
 export interface Activity {
     id: string;
     title: string;
@@ -74,7 +80,7 @@ export interface User {
     teacher: string;
     administrator: boolean;
     grades: Grade[];
-    avaliable: SimpleUser[];
+    available: SimpleUser[];
     children: string[]
 };
 
@@ -124,6 +130,19 @@ export interface Viewed {
 
 export interface OTP {
     secret: string;
-    uri: string;
     qr: string;
+}
+
+export interface Receiver {
+    key: string;
+    type?: string;
+    text?: string;
+    noDivider?: boolean;
+}
+
+export interface File {
+    data: string;
+    name: string;
+    filename: string;
+    type: string;
 }
