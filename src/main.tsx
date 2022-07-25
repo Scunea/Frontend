@@ -13,7 +13,7 @@ initializeIcons();
 
 // Inject some global styles
 mergeStyles({
-  ':global(body,html,#root)': {
+  ':global(body,html,#root,.body-110)': {
     margin: 0,
     padding: 0,
     height: '100vh',

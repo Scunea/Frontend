@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Stack, Text, MessageBar, MessageBarButton, MessageBarType, Persona, PersonaSize, ContextualMenu, ContextualMenuItemType, getTheme, DefaultButton, Modal, PrimaryButton, TextField, Link, Image, IconButton } from '@fluentui/react';
+import { Stack, Text, MessageBar, MessageBarButton, MessageBarType, Persona, PersonaSize, ContextualMenu, ContextualMenuItemType, getTheme, DefaultButton, Modal, PrimaryButton, TextField, Link, Image, IconButton, ThemeProvider } from '@fluentui/react';
 import { useBoolean } from '@fluentui/react-hooks';
 import { NeutralColors, SharedColors } from '@fluentui/theme';
 import i18n from './i18n';
