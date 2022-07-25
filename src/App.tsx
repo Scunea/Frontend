@@ -5,7 +5,6 @@ import { NeutralColors, SharedColors } from '@fluentui/theme';
 import i18n from './i18n';
 import Login from './Login';
 import Nav from './Nav';
-import Home from './Home';
 import Schedule from './Schedule';
 import Grades from './Grades';
 import Messages from './Messages';
@@ -321,7 +320,7 @@ export const App: React.FunctionComponent = () => {
               color: NeutralColors.white,
               fontWeight: 600
             }
-          }}>{t(selected ? selected.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('') : 'Home')}</Text>
+          }}>{t(selected ? selected.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('') : 'Schedule')}</Text>
         </Stack.Item>
         <Stack.Item styles={{
           root: {
@@ -827,21 +826,19 @@ export const App: React.FunctionComponent = () => {
         }}>
           {
             userInfo ? (
-              selected === "schedule" ?
-                <Schedule language={language} domain={domain} info={userInfo} ws={ws}></Schedule> :
-                selected === "grades" ?
-                  <Grades domain={domain} info={userInfo} ws={ws}></Grades> :
-                  selected === "messages" ?
-                    <Messages domain={domain} info={userInfo} ws={ws}></Messages> :
-                    selected === "reports" ?
-                      <Reports domain={domain} info={userInfo} ws={ws}></Reports> :
-                      selected === "teachers" ?
-                        <Teachers info={userInfo}></Teachers> :
-                        selected === "activities" ?
-                          <Activities domain={domain} info={userInfo} ws={ws}></Activities> :
-                          selected === 'administration' ?
-                            <Administration domain={domain} info={userInfo} ws={ws}></Administration> :
-                            <Home domain={domain} info={userInfo}></Home>) : null
+              selected === "grades" ?
+                <Grades domain={domain} info={userInfo} ws={ws}></Grades> :
+                selected === "messages" ?
+                  <Messages domain={domain} info={userInfo} ws={ws}></Messages> :
+                  selected === "reports" ?
+                    <Reports domain={domain} info={userInfo} ws={ws}></Reports> :
+                    selected === "teachers" ?
+                      <Teachers info={userInfo}></Teachers> :
+                      selected === "activities" ?
+                        <Activities domain={domain} info={userInfo} ws={ws}></Activities> :
+                        selected === 'administration' ?
+                          <Administration domain={domain} info={userInfo} ws={ws}></Administration> :
+                            <Schedule language={language} domain={domain} info={userInfo} ws={ws}></Schedule>) : null
           }
         </Stack>
       }

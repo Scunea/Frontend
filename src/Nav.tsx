@@ -13,16 +13,9 @@ const NavF = (props: { info: User; selected: string; setSelected: (value: React.
 
   const { t } = useTranslation();
 
-  return (<Nav selectedKey={props.selected.length > 0 ? props.selected : 'home'} groups={[
+  return (<Nav selectedKey={props.selected.length > 0 ? props.selected : 'schedule'} groups={[
     {
       links: [
-        {
-
-          key: 'home',
-          name: t('Home'),
-          icon: 'Home',
-          url: '#home'
-        },
         {
           key: 'schedule',
           name: t('Schedule'),

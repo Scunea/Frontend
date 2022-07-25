@@ -445,7 +445,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                         return {
                             Name: x.name,
                             Email: x.email,
-                            Subject: x.subject ?? 'N/A',
+                            Subject: x.type === 'teacher' ? x.subject : 'N/A',
                             Children: x.type === 'parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
                             Type: x.type.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('')
                         }
@@ -453,7 +453,7 @@ const Administration = (props: { domain: string | undefined; info: User; ws: Web
                         return {
                             Name: x.name,
                             Email: x.email,
-                            Subject: x.subject ?? 'N/A',
+                            Subject: x.type === 'teacher' ? x.subject : 'N/A',
                             Children: x.type === 'parent' ? x.children?.map(x => x.name).join(', ') : 'N/A',
                             Type: x.type.split('').map((x, i) => i === 0 ? x.toUpperCase() : x).join('')
                         }
