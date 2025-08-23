@@ -19,8 +19,8 @@ along with Scunea.  If not, see <https://www.gnu.org/licenses/>.
 import React, { createRef, useEffect, useState } from 'react';
 import { IDropdownOption, DropdownMenuItemType, Stack, IconButton, Dropdown, TextField, DefaultButton, PrimaryButton, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
-import { Editor } from 'ckeditor5-custom-build/build/ckeditor';
-import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { IdPlusUrl, SimpleUser, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
@@ -287,19 +287,7 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                         marginBottom: 25
                     }
                 }}>
-                    {!pdf ? <CKEditor editor={Editor} config={{
-                        simpleUpload: {
-                            uploadUrl: props.domain + '/upload',
-                            headers: {
-                                'Authorization': localStorage.getItem('token') ?? "",
-                                'School': localStorage.getItem('school') ?? "",
-                                'simple': "true"
-                            }
-                        }
-                    }} onChange={(event: Event, editor: typeof Editor) => {
-                        const data = editor.getData();
-                        setContent(data);
-                    }} /> : <iframe src={URL.createObjectURL(pdf)} style={{
+                    {!pdf ? <ReactQuill theme="snow" value={content} onChange={setContent} /> : <iframe src={URL.createObjectURL(pdf)} style={{
                         width: '100%',
                         minHeight: 400
                     }}></iframe>}
@@ -332,9 +320,9 @@ const NewMessage = (props: { domain: string | undefined; newMessage: boolean; se
                                                 method: 'POST',
                                                 body: JSON.stringify({
                                                     title: title,
-                                                    content: !pdf ? content : {
+                                                    content: !pdf ? content : JSON.stringify({
                                                         pdf: filesIds[0]
-                                                    },
+                                                    }),
                                                     files: filesIds.map((x, i) => { return { id: x, name: thingy[i].name }; }).filter((x, i) => !(pdf && i === 0)),
                                                     receiver: receiver
                                                 }),

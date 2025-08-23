@@ -19,8 +19,8 @@ along with Scunea.  If not, see <https://www.gnu.org/licenses/>.
 import React, { createRef, useEffect, useState } from 'react';
 import { IDropdownOption, DropdownMenuItemType, Stack, Dropdown, TextField, DefaultButton, PrimaryButton, MessageBar, MessageBarType } from '@fluentui/react';
 import { NeutralColors } from '@fluentui/theme';
-import { Editor } from 'ckeditor5-custom-build/build/ckeditor';
-import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ReactQuill from 'react-quill-new';
+import 'react-quill-new/dist/quill.snow.css';
 import { IdPlusName, IdPlusUrl, Message, SimpleUser, User } from './interfaces';
 import { useTranslation } from 'react-i18next';
 
@@ -292,25 +292,7 @@ const EditMessage = (props: { domain: string | undefined; oldMessage: Message; e
                         marginBottom: 25
                     }
                 }}>
-                    {!props.oldMessage?.pdf ? <CKEditor editor={Editor} config={{
-                        initialData: props.oldMessage?.content,
-                        simpleUpload: {
-                            uploadUrl: props.domain + '/upload',
-                            headers: {
-                                'Authorization': localStorage.getItem('token') ?? "",
-                                'School': localStorage.getItem('school') ?? "",
-                                'simple': "true"
-                            }
-                        },
-                        fontSize: {
-                            options: [
-                                8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 44, 48, 54, 60, 66, 72, 80, 88, 96
-                            ]
-                        }
-                    }} onChange={(event: Event, editor: typeof Editor) => {
-                        const data = editor.getData();
-                        setContent(data);
-                    }} /> : <iframe src={props.domain + '/static/' + props.oldMessage?.pdf} style={{
+                    {!props.oldMessage?.pdf ? <ReactQuill theme="snow" defaultValue={props.oldMessage?.content} value={content} onChange={setContent} /> : <iframe src={props.domain + '/static/' + props.oldMessage?.pdf} style={{
                         width: '100%',
                         minHeight: 400
                     }}></iframe>}
