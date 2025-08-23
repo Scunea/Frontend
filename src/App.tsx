@@ -38,7 +38,7 @@ const domain = import.meta.env.VITE_DOMAIN;
 
 export const App: React.FunctionComponent = () => {
 
-  const personaRef = useRef(null);
+  const personaRef = useRef<HTMLDivElement>(null);
 
   const [ws, setWs] = useState<WebSocket>();
   const [websocketLost, setWebsocketLost] = useState(false);
@@ -747,7 +747,7 @@ export const App: React.FunctionComponent = () => {
           }} onClick={() => {
             setShowPersonaMenu(true);
           }} />
-          <ContextualMenu hidden={!showPersonaMenu} onDismiss={() => setShowPersonaMenu(false)} target={personaRef} onItemClick={(event, item) => {
+          <ContextualMenu hidden={!showPersonaMenu} onDismiss={() => setShowPersonaMenu(false)} target={personaRef.current} onItemClick={(event, item) => {
             setShowPersonaMenu(false);
           }} items={[
             {
